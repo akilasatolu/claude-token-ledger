@@ -1,0 +1,2343 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; base-uri 'none'; form-action 'none'"></head><body>
+<title>Token Ledger</title>
+<style>
+/* Layout: dashboard. Brand + loader bar on top; a dark "how much can I save" panel with four figures; breakdown and context gauge; ranked fixes; then where the tokens went (tasks, tools, timeline). */
+:root {
+  --page: #EAEEF1;
+  --surface: #FFFFFF;
+  --ink: #0E1B26;
+  --ink2: #435260;
+  --muted: #667380;
+  --grid: #DDE3E8;
+  --base: #B7C1C9;
+  --hair: rgba(14, 27, 38, 0.10);
+  --hair-strong: rgba(14, 27, 38, 0.22);
+  --wash: #F2F5F7;
+  --s1: #2A78D6;
+  --s2: #EB6834;
+  --s3: #1BAF7A;
+  --good: #1F9D6B;
+  --warn-ic: #E0A21F;
+  --crit-ic: #D03B3B;
+  --hero: #0F2B3C;
+  --hero-ink: #F2F7FA;
+  --hero-ink2: #B3C5D1;
+  --hero-line: rgba(255, 255, 255, 0.16);
+  --hero-mint: #66DDB0;
+  --sans: "IBM Plex Sans JP", system-ui, -apple-system, "Segoe UI", "Hiragino Sans", "Yu Gothic UI", "Noto Sans JP", sans-serif;
+  --num: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --page: #0B1218; --surface: #131D26; --ink: #EAF0F4; --ink2: #B7C4CE; --muted: #8696A3;
+    --grid: #25313C; --base: #384652; --hair: rgba(255, 255, 255, 0.10); --hair-strong: rgba(255, 255, 255, 0.24); --wash: #1A2631;
+    --s1: #3987E5; --s2: #D95926; --s3: #199E70; --good: #2BB682; --warn-ic: #E3AB2F;
+    --hero: #16384C; --hero-line: rgba(255, 255, 255, 0.18);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --page: #0B1218; --surface: #131D26; --ink: #EAF0F4; --ink2: #B7C4CE; --muted: #8696A3;
+  --grid: #25313C; --base: #384652; --hair: rgba(255, 255, 255, 0.10); --hair-strong: rgba(255, 255, 255, 0.24); --wash: #1A2631;
+  --s1: #3987E5; --s2: #D95926; --s3: #199E70; --good: #2BB682; --warn-ic: #E3AB2F;
+  --hero: #16384C; --hero-line: rgba(255, 255, 255, 0.18);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body { background: var(--page); color: var(--ink); font-family: var(--sans); font-size: 15px; line-height: 1.7; padding-inline: 16px; padding-block: 20px 56px; margin: 0; }
+.wrap { max-width: 1180px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+.mono { font-family: var(--mono); }
+h1 { font-size: 1.15rem; font-weight: 700; letter-spacing: -0.01em; line-height: 1.2; margin: 0; }
+h2 { font-size: 1.02rem; font-weight: 700; margin: 0; text-wrap: balance; }
+.sub { margin: 4px 0 0; color: var(--ink2); font-size: .88rem; max-width: 56em; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus-visible, .plot:focus-visible, .trow:focus-visible, a:focus-visible {
+  outline: 2px solid var(--s1); outline-offset: 2px;
+}
+
+/* top bar + loader */
+.top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px; }
+.brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.brand svg { width: 34px; height: 34px; flex: none; }
+.brand p { margin: 0; font-size: .8rem; color: var(--ink2); line-height: 1.3; }
+.drop { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 8px 8px 8px 16px; background: var(--surface); border: 1px dashed var(--base); border-radius: 999px; }
+.drop.over { border-color: var(--s1); background: var(--wash); }
+.drop .msg { color: var(--ink2); font-size: .84rem; }
+.btn { display: inline-flex; align-items: center; justify-content: center; height: 34px; padding: 0 16px; background: var(--surface); border: 1px solid var(--hair-strong); border-radius: 999px; cursor: pointer; font-size: .86rem; font-weight: 500; }
+.btn:hover { background: var(--wash); }
+.btn.primary { background: var(--ink); border-color: var(--ink); color: var(--page); font-weight: 700; }
+.btn.primary:hover { opacity: .88; background: var(--ink); }
+.statusbar { display: flex; flex-direction: column; gap: 8px; margin-top: -8px; }
+.status { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: center; font-size: .84rem; color: var(--ink2); min-height: 1.5em; }
+.status span:first-child { font-weight: 700; color: var(--ink); }
+.err { background: var(--surface); border: 1px solid var(--crit-ic); border-radius: 10px; padding: 10px 14px; font-size: .9rem; display: flex; gap: 10px; align-items: flex-start; }
+.err[hidden] { display: none; }
+details > summary { cursor: pointer; font-size: .86rem; color: var(--ink2); width: fit-content; }
+details > summary:hover { color: var(--ink); }
+#paste { width: 100%; min-height: 110px; margin-top: 8px; background: var(--surface); border: 1px solid var(--hair-strong); border-radius: 10px; padding: 10px; font-family: var(--mono); font-size: .8rem; resize: vertical; }
+.pasteRow { display: flex; gap: 8px; margin-top: 8px; }
+
+/* filter chips */
+.filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; }
+.fgroup { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.flab { font-size: .78rem; font-weight: 700; color: var(--ink2); }
+.seg { display: inline-flex; border: 1px solid var(--hair-strong); border-radius: 999px; overflow: hidden; background: var(--surface); }
+.seg button { border: 0; background: transparent; height: 30px; padding: 0 12px; cursor: pointer; font-size: .82rem; display: inline-flex; align-items: center; gap: 6px; }
+.seg button + button { border-left: 1px solid var(--hair); }
+.seg button:hover:not(:disabled) { background: var(--wash); }
+.seg button:disabled { opacity: .4; cursor: default; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--page); font-weight: 700; }
+.chk { display: inline-flex; align-items: center; gap: 6px; font-size: .84rem; cursor: pointer; }
+.chk input { accent-color: var(--s1); width: 16px; height: 16px; }
+
+/* hero */
+.hero { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 16px; }
+.save { background: var(--hero); color: var(--hero-ink); border-radius: 20px; padding: 26px 28px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.save .hl { margin: 0; font-size: .86rem; font-weight: 700; color: var(--hero-ink2); }
+.save .big { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.save .num { font-family: var(--num); font-weight: 600; font-size: clamp(3.2rem, 9vw, 5.2rem); line-height: 1; letter-spacing: -0.04em; color: var(--hero-mint); font-variant-numeric: tabular-nums; }
+.save .unit { font-size: 1rem; color: var(--hero-ink2); }
+.save .lead { margin: 0; font-size: 1rem; line-height: 1.7; max-width: 38em; }
+.save .lead strong { color: var(--hero-mint); font-weight: 700; }
+.top3 { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; border-top: 1px solid var(--hero-line); }
+.top3 li { border-bottom: 1px solid var(--hero-line); }
+.top3 a { display: grid; grid-template-columns: 1.4rem minmax(0, 1.2fr) minmax(4rem, 1fr) 3.6rem; gap: 12px; align-items: center; padding: 10px 2px; color: inherit; text-decoration: none; font-size: .9rem; }
+.top3 a:hover { background: rgba(255, 255, 255, .06); }
+.top3 .n { font-family: var(--num); color: var(--hero-ink2); }
+.top3 .t { min-width: 0; overflow-wrap: anywhere; line-height: 1.4; }
+.top3 .tr2 { height: 8px; background: rgba(255, 255, 255, .14); border-radius: 4px; overflow: hidden; }
+.top3 .tr2 i { display: block; height: 100%; background: var(--hero-mint); border-radius: 4px; }
+.top3 .p { font-family: var(--num); font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; }
+.save .fine { margin: 0; font-size: .78rem; color: var(--hero-ink2); line-height: 1.6; }
+.save a:focus-visible { outline-color: var(--hero-mint); }
+.kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 0; }
+.kpis > div { min-width: 0; background: var(--surface); border: 1px solid var(--hair); border-radius: 14px; padding: 14px 16px; display: flex; flex-direction: column; justify-content: space-between; gap: 6px; }
+.kpis dt { font-size: .78rem; font-weight: 700; color: var(--ink2); line-height: 1.4; }
+.kpis dd { margin: 0; }
+.kpis .v { display: block; font-family: var(--num); font-size: 1.7rem; font-weight: 600; letter-spacing: -0.03em; line-height: 1.2; font-variant-numeric: tabular-nums; }
+.kpis .d { display: block; font-size: .78rem; color: var(--ink2); line-height: 1.5; }
+
+/* cards */
+.card { background: var(--surface); border: 1px solid var(--hair); border-radius: 16px; padding: 20px 22px; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.sechead { display: flex; flex-direction: column; gap: 2px; }
+.lede2 { margin: 0; color: var(--ink2); font-size: .88rem; }
+
+.bd-bar { display: flex; gap: 2px; height: 26px; }
+.bd-bar i { display: block; min-width: 3px; height: 100%; }
+.bd-bar i:first-child { border-radius: 6px 0 0 6px; }
+.bd-bar i:last-child { border-radius: 0 6px 6px 0; }
+.bd-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.bd-list li { display: grid; grid-template-columns: 12px minmax(0, 1fr) auto; gap: 4px 10px; align-items: start; }
+.bd-list .sw { margin-top: 6px; }
+.bd-list .nm { font-weight: 700; font-size: .9rem; line-height: 1.5; }
+.bd-list .ds { display: block; font-weight: 400; font-size: .8rem; color: var(--ink2); }
+.bd-list .vl { text-align: right; font-family: var(--num); font-weight: 600; font-size: .95rem; line-height: 1.5; font-variant-numeric: tabular-nums; }
+.bd-list .vl small { display: block; font-family: var(--sans); font-weight: 400; color: var(--muted); font-size: .76rem; }
+.note2 { margin: 0; padding: 10px 12px; background: var(--wash); border-radius: 10px; font-size: .84rem; color: var(--ink2); }
+
+.gauge-num { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.gauge-num b { font-family: var(--num); font-size: 2.2rem; font-weight: 600; letter-spacing: -0.03em; line-height: 1.1; }
+.gauge-num span { color: var(--ink2); font-size: .88rem; }
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 2px 12px 2px 8px; border-radius: 999px; font-size: .82rem; font-weight: 700; border: 1px solid var(--hair-strong); background: var(--wash); }
+.pill svg { width: 16px; height: 16px; flex: none; }
+.gauge { position: relative; padding-top: 22px; }
+.gauge .track { height: 14px; background: var(--grid); border-radius: 7px; position: relative; overflow: hidden; }
+.gauge .fill { position: absolute; inset: 0 auto 0 0; border-radius: 7px; }
+.gauge .tick { position: absolute; top: 0; bottom: -4px; width: 0; border-left: 1px dashed var(--muted); }
+.gauge .tl2 { position: absolute; top: 0; transform: translateX(-50%); font-size: .72rem; color: var(--muted); white-space: nowrap; }
+.gauge .tl2.r { transform: translateX(-100%); }
+.gauge-meta { margin: 0; font-size: .84rem; color: var(--ink2); }
+
+/* fixes */
+.opps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
+.opp { display: grid; grid-template-columns: 2.8rem minmax(0, 1fr); gap: 4px 16px; padding: 20px 22px; background: var(--surface); border: 1px solid var(--hair); border-radius: 16px; scroll-margin-top: 16px; }
+.opps .grp { list-style: none; padding: 14px 4px 0; }
+.opps .grp h3 { margin: 0; font-size: 1rem; font-weight: 700; }
+.rk { width: 2.4rem; height: 2.4rem; border-radius: 50%; background: var(--ink); color: var(--page); display: grid; place-items: center; font-family: var(--num); font-weight: 600; font-size: 1rem; }
+.rk.ref { background: var(--wash); color: var(--ink2); border: 1px solid var(--hair-strong); border-radius: 10px; font-family: var(--sans); font-size: .7rem; font-weight: 700; width: auto; padding: 0 8px; height: 1.7rem; margin-top: 4px; }
+.ob { min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+.oh { display: flex; flex-wrap: wrap; gap: 8px 24px; align-items: flex-start; justify-content: space-between; }
+.ohw { flex: 1 1 16em; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding-top: 2px; }
+.chip { font-size: .72rem; font-weight: 700; color: var(--ink2); background: var(--wash); border: 1px solid var(--hair-strong); border-radius: 999px; padding: 0 10px; line-height: 1.7; }
+.oh h3 { margin: 0; font-size: 1.06rem; font-weight: 700; text-wrap: balance; min-width: 0; line-height: 1.45; }
+.sv { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; min-width: 9rem; }
+.sv b { font-family: var(--num); font-size: 1.7rem; font-weight: 600; letter-spacing: -0.03em; line-height: 1.1; color: var(--ink); }
+.sv small { color: var(--ink2); font-size: .78rem; }
+.sv b small.u { font-family: var(--sans); font-weight: 400; font-size: .8rem; letter-spacing: 0; }
+.sbar { width: 9rem; max-width: 100%; height: 6px; background: var(--grid); border-radius: 3px; margin-top: 4px; }
+.sbar i { display: block; height: 100%; background: var(--good); border-radius: 3px; }
+.os { margin: 0; color: var(--ink2); font-size: .92rem; overflow-wrap: anywhere; }
+.os strong { color: var(--ink); }
+.tipx { margin: 0; font-size: .92rem; padding: 12px 14px; background: color-mix(in srgb, var(--good) 11%, var(--surface)); border: 1px solid color-mix(in srgb, var(--good) 30%, transparent); border-radius: 12px; overflow-wrap: anywhere; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 12px; }
+.tipx .tl { font-weight: 700; color: var(--good); white-space: nowrap; display: inline-flex; gap: 6px; align-items: baseline; }
+.ex { display: flex; flex-direction: column; gap: 6px; }
+.ex-r { display: grid; grid-template-columns: 6.2rem minmax(0, 1fr); gap: 10px; align-items: baseline; padding: 8px 12px; border-radius: 10px; font-size: .9rem; overflow-wrap: anywhere; }
+.ex-r.bad { background: var(--wash); }
+.ex-r.good { background: color-mix(in srgb, var(--s1) 10%, var(--surface)); border: 1px solid color-mix(in srgb, var(--s1) 28%, transparent); }
+.ex-l { font-size: .76rem; font-weight: 700; color: var(--ink2); }
+.ex-r.bad .ex-t { color: var(--ink2); }
+@media (max-width: 600px) { .ex-r { grid-template-columns: 1fr; gap: 0; } }
+.evh { margin: 2px 0 -6px; font-size: .76rem; font-weight: 700; color: var(--muted); }
+.evl { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--hair); }
+.evl li { border-bottom: 1px solid var(--hair); }
+.evr { display: grid; grid-template-columns: 3.4rem minmax(0, 1fr) auto; gap: 10px; width: 100%; align-items: baseline; background: transparent; border: 0; padding: 7px 4px; text-align: left; cursor: pointer; font-size: .84rem; line-height: 1.5; }
+.evr:hover { background: var(--wash); }
+.evr .cn { font-family: var(--mono); font-size: .78rem; color: var(--s1); text-decoration: underline; text-underline-offset: 3px; }
+.evr .lb { min-width: 0; overflow-wrap: anywhere; }
+.evr .vl { color: var(--ink2); white-space: nowrap; text-align: right; }
+.wbs { display: flex; flex-direction: column; gap: 6px; }
+.wb { display: grid; grid-template-columns: 7.5rem minmax(0, 1fr) 7rem; gap: 10px; align-items: center; font-size: .86rem; }
+.wb.best { font-weight: 700; }
+.wb .vv { text-align: right; white-space: nowrap; }
+.wb .vv small { display: block; font-weight: 400; color: var(--muted); font-size: .74rem; line-height: 1.3; }
+.none { margin: 0; color: var(--ink2); }
+.cap { margin: 0; font-size: .8rem; color: var(--muted); }
+
+.cats { display: flex; flex-wrap: wrap; gap: 8px; }
+.cat { height: 30px; padding: 0 12px; border: 1px solid var(--hair-strong); border-radius: 999px; background: var(--surface); cursor: pointer; font-size: .82rem; }
+.cat:hover { background: var(--wash); }
+.cat[aria-pressed="true"] { background: var(--ink); color: var(--page); border-color: var(--ink); font-weight: 700; }
+.rank { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--hair); }
+.rkq { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 4px 0 10px; }
+.rkq label { font-weight: 600; font-size: .9em; }
+.rkq input { flex: 1 1 14rem; min-width: 0; padding: 7px 10px; border: 1px solid var(--hair); border-radius: 8px; background: var(--card, transparent); color: inherit; font: inherit; }
+.rk-i { border-bottom: 1px solid var(--hair); }
+.rk-s { display: grid; grid-template-columns: 2rem minmax(0, 1fr) minmax(5rem, 14rem) 4.4rem; gap: 12px; align-items: center; padding: 10px 4px; cursor: pointer; width: auto; list-style: none; color: var(--ink); font-size: .92rem; }
+.rk-s::-webkit-details-marker { display: none; }
+.rk-s:hover { background: var(--wash); }
+.rk-n { font-family: var(--num); font-weight: 600; color: var(--ink2); text-align: right; }
+.rk-m { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 3px; }
+.rk-t { overflow-wrap: anywhere; line-height: 1.45; }
+.rk-b { height: 8px; background: var(--grid); border-radius: 4px; overflow: hidden; }
+.rk-b i { display: block; height: 100%; background: var(--good); border-radius: 4px; }
+.rk-p { font-family: var(--num); font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; }
+.rk-body { padding: 4px 4px 16px 3rem; display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
+.rk-body .evl, .rk-body .tipx { align-self: stretch; }
+.rankmore { display: flex; justify-content: center; }
+.rankmore[hidden], #rankMore[hidden] { display: none; }
+.miss { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; margin-top: 10px; }
+.miss-g h4 { margin: 0 0 4px; font-size: .84rem; }
+.miss-g ul { margin: 0; padding-left: 1.1em; font-size: .82rem; color: var(--ink2); }
+@media (max-width: 600px) { .rk-s { grid-template-columns: 1.6rem minmax(0, 1fr) 3.8rem; } .rk-b { display: none; } .rk-body { padding-left: 0; } }
+.bgrp { display: flex; flex-direction: column; gap: 8px; }
+.bh { margin: 0; font-size: .95rem; font-weight: 700; display: flex; align-items: baseline; gap: 10px; }
+.bn { font-size: .74rem; font-weight: 400; color: var(--muted); }
+.basics { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; }
+.basics li { padding: 12px 14px; background: var(--wash); border-radius: 12px; font-size: .86rem; color: var(--ink2); display: flex; flex-direction: column; gap: 2px; }
+.basics b { color: var(--ink); font-size: .92rem; }
+
+.finds { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.finds li { display: grid; grid-template-columns: 4.6rem minmax(0, 1fr); gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--hair); align-items: baseline; font-size: .9rem; }
+.finds li:first-child { border-top: 1px solid var(--hair); }
+.lv { display: inline-flex; align-items: center; gap: 5px; font-size: .78rem; font-weight: 700; color: var(--ink2); }
+.lv svg { width: 14px; height: 14px; flex: none; }
+.finds .tx { min-width: 0; overflow-wrap: anywhere; }
+.finds strong { font-weight: 700; }
+
+@media (max-width: 920px) {
+  .hero { grid-template-columns: 1fr; }
+  .grid2 { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+  .save { padding: 20px 18px; border-radius: 16px; }
+  .top3 a { grid-template-columns: 1.2rem minmax(0, 1fr) 3.4rem; }
+  .top3 .tr2 { display: none; }
+  .card, .opp { padding: 16px; }
+  .opp { grid-template-columns: 1fr; }
+  .sv { align-items: flex-start; }
+  .evr { grid-template-columns: 3rem minmax(0, 1fr); }
+  .evr .vl { grid-column: 2; text-align: left; white-space: normal; }
+  .wb { grid-template-columns: 5.6rem minmax(0, 1fr) 5.6rem; }
+  .tipx { grid-template-columns: 1fr; }
+  .kpis .v { font-size: 1.4rem; }
+  .drop { border-radius: 16px; padding: 10px 12px; }
+}
+/* chart cards */
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: .84rem; color: var(--ink2); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sw { width: 12px; height: 12px; border-radius: 2px; display: inline-block; flex: none; }
+.s1 { background: var(--s1); }
+.s2 { background: var(--s2); }
+.s3 { background: var(--s3); }
+.cap { margin: 0; font-size: .82rem; color: var(--muted); }
+
+.rows { display: flex; flex-direction: column; gap: 8px; }
+.trow { display: grid; grid-template-columns: minmax(8rem, 16rem) minmax(0, 1fr) 6.2rem; gap: 12px; align-items: center; border-radius: 4px; }
+.tlabel { min-width: 0; display: flex; gap: 8px; align-items: baseline; font-size: .88rem; }
+.tno { font-family: var(--mono); font-size: .78rem; color: var(--muted); flex: none; }
+.ttl { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tbarwrap { min-width: 0; height: 22px; display: flex; align-items: center; }
+.stack { display: flex; gap: 2px; height: 20px; min-width: 2px; }
+.stack > i { display: block; min-width: 0; flex-basis: 0; height: 100%; }
+.stack > i:last-child { border-radius: 0 4px 4px 0; }
+.stack > i:hover { filter: brightness(1.12); outline: 2px solid var(--ink); outline-offset: -2px; }
+.tval { font-size: .88rem; font-weight: 650; text-align: right; white-space: nowrap; }
+.tval small { display: block; font-weight: 400; color: var(--muted); font-size: .74rem; line-height: 1.3; }
+.trow.dim .ttl { color: var(--ink2); }
+@media (max-width: 600px) {
+  .trow { grid-template-columns: minmax(0, 1fr) 5.6rem; grid-template-areas: "l l" "b v"; row-gap: 2px; }
+  .tlabel { grid-area: l; }
+  .tbarwrap { grid-area: b; }
+  .tval { grid-area: v; }
+  }
+
+.plot { position: relative; width: 100%; height: 300px; touch-action: pan-y; }
+.plot svg { display: block; width: 100%; height: 300px; overflow: visible; }
+.plot .g { stroke: var(--grid); stroke-width: 1; }
+.plot .b { stroke: var(--base); stroke-width: 1; }
+.plot .lim { stroke: var(--muted); stroke-width: 1; }
+.plot .band { fill: var(--grid); opacity: .38; }
+.plot .area { fill: var(--s1); opacity: .10; }
+.plot .line { fill: none; stroke: var(--s1); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.plot .dot { fill: var(--s1); stroke: var(--surface); stroke-width: 2; }
+.plot .cmp { fill: var(--ink); stroke: var(--surface); stroke-width: 2; }
+.plot .gap { fill: var(--base); opacity: .4; }
+.plot .brk { fill: var(--ink); stroke: var(--surface); stroke-width: 1.5; }
+.plot .xh { stroke: var(--muted); stroke-width: 1; }
+.plot text { font-family: var(--sans); font-size: 11px; fill: var(--muted); }
+.plot text.ink { fill: var(--ink); font-weight: 650; }
+.plot text.ink2 { fill: var(--ink2); }
+
+.twin summary { margin-top: 2px; }
+.tablebox { max-height: 340px; overflow: auto; margin-top: 10px; border: 1px solid var(--hair); border-radius: 6px; }
+table { border-collapse: collapse; width: 100%; font-size: .84rem; }
+th, td { padding: 6px 10px; text-align: left; border-bottom: 1px solid var(--hair); white-space: nowrap; }
+th { position: sticky; top: 0; background: var(--wash); font-weight: 650; font-size: .78rem; color: var(--ink2); }
+td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; }
+td.wrapc { white-space: normal; min-width: 12rem; overflow-wrap: anywhere; }
+tr:last-child td { border-bottom: 0; }
+
+#tip { position: fixed; z-index: 60; pointer-events: none; background: var(--surface); color: var(--ink); border: 1px solid var(--hair-strong); border-radius: 6px; box-shadow: 0 4px 16px rgba(0, 0, 0, .18); padding: 8px 10px; font-size: .82rem; line-height: 1.5; max-width: min(320px, calc(100vw - 16px)); }
+#tip[hidden] { display: none; }
+#tip .tt { color: var(--ink2); overflow-wrap: anywhere; margin-bottom: 4px; }
+#tip .tr { display: grid; grid-template-columns: 14px minmax(0, 1fr) auto; gap: 6px; align-items: baseline; }
+#tip .tr b { font-weight: 700; }
+#tip .tr .l { color: var(--ink2); }
+#tip .tr .k { width: 10px; height: 3px; border-radius: 2px; align-self: center; }
+#tip .tn { color: var(--muted); margin-top: 4px; }
+
+
+.gloss { font-size: .86rem; }
+.gloss summary { cursor: pointer; color: var(--ink2); font-weight: 700; }
+.gloss dl { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 14px; margin: 8px 0 0; }
+.gloss dt { font-weight: 700; }
+.gloss dd { margin: 0; color: var(--ink2); }
+@media (max-width: 560px) { .gloss dl { grid-template-columns: 1fr; gap: 0; } .gloss dd { margin-bottom: 8px; } }
+.foot { margin: 0; font-size: .78rem; color: var(--muted); max-width: 64em; }
+.busy { opacity: .55; transition: opacity .12s; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<main class="wrap">
+  <header class="top">
+    <div class="brand">
+      <svg viewBox="0 0 34 34" aria-hidden="true"><rect width="34" height="34" rx="9" fill="var(--hero)"/><rect x="7" y="19" width="4.5" height="8" rx="1.2" fill="#66DDB0"/><rect x="14.7" y="13" width="4.5" height="14" rx="1.2" fill="#66DDB0" opacity=".75"/><rect x="22.5" y="7" width="4.5" height="20" rx="1.2" fill="#66DDB0" opacity=".5"/></svg>
+      <div><h1>Token Ledger</h1><p>Claude Code の使い過ぎを見つけて、減らす</p></div>
+    </div>
+    <div id="drop" class="drop">
+      <div class="msg">会話記録(.jsonl)をここにドロップ</div>
+      <button id="pick" class="btn primary" type="button">ファイルを選ぶ</button>
+      <button id="sampleBtn" class="btn" type="button">サンプルに戻す</button>
+      <input id="file" type="file" accept=".jsonl,.json,.txt,application/json,text/plain" hidden>
+    </div>
+  </header>
+
+  <div class="statusbar">
+    <div id="status" class="status" aria-live="polite"></div>
+    <div id="err" class="err" role="alert" hidden></div>
+    <details>
+      <summary>記録ファイルの場所と、貼り付けて読み込む方法</summary>
+      <p class="cap" style="margin-top:8px">会話記録は <span class="mono">~/.claude/projects/</span> の下にある <span class="mono">.jsonl</span> ファイルです。ファイルはこのページの中だけで処理され、外部には送られません。</p>
+      <textarea id="paste" spellcheck="false" placeholder='{"type":"user","message":{...}} の行をそのまま貼り付けます'></textarea>
+      <div class="pasteRow"><button id="pasteBtn" class="btn" type="button">読み込む</button></div>
+    </details>
+  </div>
+
+  <div id="main" class="wrap" style="gap:20px">
+    <div class="filters" role="group" aria-label="集計の条件">
+      <div class="fgroup"><span class="flab">会話の長さの上限</span>
+        <div id="winCtl" class="seg" role="group" aria-label="会話の長さの上限">
+          <button type="button" data-win="200000" aria-pressed="true">200k</button>
+          <button type="button" data-win="1000000" aria-pressed="false">1M</button>
+        </div>
+      </div>
+      <div class="fgroup"><span class="flab">グラフの横軸</span>
+        <div id="axisCtl" class="seg" role="group" aria-label="グラフの横軸">
+          <button type="button" data-axis="idx" aria-pressed="false">やり取りの順</button>
+          <button type="button" data-axis="time" aria-pressed="true">時間</button>
+        </div>
+      </div>
+      <label class="chk"><input id="crInc" type="checkbox" checked>使い回し分(キャッシュ)も数える</label>
+      <label class="chk"><input id="side" type="checkbox" checked>サブエージェント(任せた調べもの)の分も数える</label>
+    </div>
+
+    <section class="hero" aria-label="削減の見込み">
+      <div id="heroSave" class="save"></div>
+      <dl id="kpis" class="kpis"></dl>
+    </section>
+
+    <section class="grid2">
+      <div class="card" aria-labelledby="hBd">
+        <div class="sechead"><h2 id="hBd">トークンの内訳</h2><p class="lede2">何に使ったかの割合です。</p></div>
+        <div id="breakdown" style="display:flex;flex-direction:column;gap:16px"></div>
+      </div>
+      <div class="card" aria-labelledby="hGa">
+        <div class="sechead"><h2 id="hGa">会話の長さは上限に対してどうか</h2><p class="lede2">長いほど、1 回のやり取りが重くなります。</p></div>
+        <div id="gauge" style="display:flex;flex-direction:column;gap:14px"></div>
+      </div>
+    </section>
+
+    <section aria-labelledby="hOpp" style="display:flex;flex-direction:column;gap:14px">
+      <div class="sechead">
+        <h2 id="hOpp">どこを直すと減らせるか</h2>
+        <p class="sub">減らせそうな量が大きい順です。緑の枠が、具体的な直し方です。量は、各項目の注記にある仮定で見積もった目安です。項目どうしで重なる分があるため、合計は出していません。例の行をクリックすると、下のグラフのそのやり取りに移動します。</p>
+      </div>
+      <ol id="opps" class="opps"></ol>
+      <p id="oppsEmpty" class="none" hidden>大きく減らせそうな項目は見つかりませんでした(全体の 0.5% を超えるものがありません)。</p>
+    </section>
+
+    <section class="card" aria-labelledby="hRank">
+      <div class="sechead">
+        <h2 id="hRank">全観点ランキング</h2>
+        <p id="rankSub" class="sub"></p>
+      </div>
+      <div id="rankCats" class="cats" role="group" aria-label="分類で絞り込む"></div>
+      <div class="rkq"><label for="rankQ">言葉で探す</label><input id="rankQ" type="search" placeholder="例: git、npm、README、待ち時間" autocomplete="off" maxlength="60"><span id="rankQn" class="cap" aria-live="polite"></span></div>
+      <ol id="rankList" class="rank"></ol>
+      <div class="rankmore"><button id="rankMore" class="btn" type="button"></button></div>
+      <div id="rankUnq"></div>
+      <details class="twin"><summary id="missSum"></summary><div id="missList" class="miss"></div></details>
+    </section>
+
+    <section class="card" aria-labelledby="hBas">
+      <div class="sechead"><h2 id="hBas">いつでも効く基本</h2><p class="sub">記録の数字に出てこなくても使える、減らし方のまとめです。上の項目で当てはまったものがなくても、習慣にすると効きます。</p></div>
+      <div class="bgrp"><h3 class="bh">会話の使い方<span class="bn">6 項目</span></h3><p class="cap">会話が長いほど、毎回の送信が重くなります。短く保つのが、いちばん効きます。</p>
+      <ul class="basics">
+        <li><b>依頼ごとに会話を分ける</b>終わったら /clear か新しい会話にします。前の依頼の内容を、次の依頼でも読み直さずに済みます。</li>
+        <li><b>長くなる前に要約する</b>区切りで /compact を実行します。「/compact 決まった仕様とエラーの原因だけ残して」のように、残す内容も指定できます。</li>
+        <li><b>今どれくらい使っているか見る</b>/context で、会話の中身の内訳を確認できます。何が大きいかが分かれば、直す場所が決まります。</li>
+        <li><b>古い会話を、そのまま再開しない</b>長くなった昔の会話を --resume で再開すると、その長さをまた読み直します。続きでなければ、新しい会話で始めます。</li>
+        <li><b>1 つの会話に 1 つの目的</b>別の話題は新しい会話にします。関係のない履歴が、毎回読み直されるのを防げます。</li>
+        <li><b>短い質問は、新しい会話で</b>長い会話の中で一言だけ聞くと、会話全体が読み直されます。ちょっとした質問は、別の会話で聞きます。</li>
+      </ul></div>
+      <div class="bgrp"><h3 class="bh">指示の出し方<span class="bn">8 項目</span></h3><p class="cap">最初の指示が具体的なほど、探し回りもやり直しも減ります。</p>
+      <ul class="basics">
+        <li><b>場所を具体的に書く</b>「認証まわりを直して」より、「src/auth/token.ts の validateToken を直して」のほうが、探す回数が減ります。ファイルは @ を付けて指定できます。</li>
+        <li><b>完成の条件を先に伝える</b>「テストが通ったら完了」「この 3 項目が動けば完了」のように書くと、やり直しが減ります。</li>
+        <li><b>やる前に方針を確認する</b>大きな変更は、実行の前に「やり方を 3 行で説明して」と頼みます。計画モード(Shift+Tab で切り替え)も使えます。</li>
+        <li><b>触らない範囲を伝える</b>「他のファイルは触らないで」と書くと、余計な読み込みと変更が減ります。</li>
+        <li><b>1 つの依頼は 1 つの目的に</b>あれもこれもと詰め込まず、目的ごとに分けると、会話を短く保てます。</li>
+        <li><b>返答の長さを指定する</b>「結論を 5 行で」「差分だけ見せて」と頼むと、返答のトークンが減ります。「詳しく」「徹底的に」は長くなります。</li>
+        <li><b>エラーは要点を貼る</b>エラーは、前後 20 行ほどと、実行したコマンドを貼ります。全文の貼り付けは、毎回読み直されます。</li>
+        <li><b>間違いに気づいたら、すぐ止める</b>Esc で中断して、言い直します。間違った方向の作業が、続くのを防げます。</li>
+      </ul></div>
+      <div class="bgrp"><h3 class="bh">ファイルとコマンド<span class="bn">7 項目</span></h3><p class="cap">読み込みと実行結果は、会話にそのまま積まれます。出力を絞るのが近道です。</p>
+      <ul class="basics">
+        <li><b>ファイルは範囲を指定して読む</b>「100〜200 行目だけ」「○○関数の部分だけ」のように頼みます。大きなファイルの丸ごと読み込みを避けられます。</li>
+        <li><b>先に検索で場所を絞る</b>Grep でファイル名だけを出させてから、必要なファイルを読みます。</li>
+        <li><b>コマンドの出力を絞る</b>「最後の 20 行だけ」「失敗した行だけ」と頼みます。npm install や テスト実行は、出力が長くなります。</li>
+        <li><b>git の履歴は件数を絞る</b>git log は --oneline -20、git diff は --stat から見ます。</li>
+        <li><b>同じものを読み直さない</b>一度読んだ内容は会話に残っています。「さっき読んだファイルを使って」と伝えます。</li>
+        <li><b>読ませたくないファイルを除く</b>node_modules、ロックファイル、ログ、生成ファイルは、設定(permissions の deny)で読み取りを禁止できます。</li>
+        <li><b>大きなデータは要約を作らせる</b>CSV やログは、全体を読ませずに、集計するコマンドの結果だけ見せます。</li>
+      </ul></div>
+      <div class="bgrp"><h3 class="bh">調べものとサブエージェント<span class="bn">5 項目</span></h3><p class="cap">広い調べものは、別担当に任せると、メインの会話が重くなりません。</p>
+      <ul class="basics">
+        <li><b>調べものは任せる</b>「サブエージェントで調べて、結論を 5 行で報告して」と頼みます。調べた過程が、メインの会話に残りません。</li>
+        <li><b>報告の長さを決める</b>任せるときは、「結論と根拠のファイル名だけ」のように、返す内容を決めます。</li>
+        <li><b>小さな確認には使わない</b>1〜2 回で終わる確認は、メインで直接行うほうが軽く済みます。</li>
+        <li><b>調べる範囲を狭める</b>「このフォルダだけ」と範囲を指定します。</li>
+        <li><b>まとめて頼む</b>複数のファイルや検索は、「まとめて並行して読んで」と一度に頼みます。送る回数が減ります。</li>
+      </ul></div>
+      <div class="bgrp"><h3 class="bh">設定と環境<span class="bn">5 項目</span></h3><p class="cap">毎回の送信に含まれる「土台」を軽くすると、すべてのやり取りが軽くなります。</p>
+      <ul class="basics">
+        <li><b>CLAUDE.md を短く保つ</b>毎回送られます。長い説明や古い情報は消して、守ってほしいルールだけを残します。</li>
+        <li><b>使っていない MCP を止める</b>/mcp で接続を確認して、使わないサーバーは外します。接続しているだけで、ツールの一覧が毎回送られます。</li>
+        <li><b>毎回の指示は CLAUDE.md に</b>何度も書く前提は、一度だけ書きます。ただし短く。</li>
+        <li><b>用途に合わせてモデルを選ぶ</b>調べものや簡単な修正は軽いモデル、難しい設計や原因調査は重いモデル。/model で切り替えます。</li>
+        <li><b>不要なプラグインを外す</b>使っていない拡張は外します。土台が軽くなります。</li>
+      </ul></div>
+      <div class="bgrp"><h3 class="bh">待ち時間と使い回し<span class="bn">4 項目</span></h3><p class="cap">約 5 分あくと、使い回し(キャッシュ)が切れます。</p>
+      <ul class="basics">
+        <li><b>キリの良いところまで進める</b>席を離れる前に、作業をひと区切りさせます。続きは新しい会話にすると、無駄がありません。</li>
+        <li><b>作業の途中で設定を変えない</b>CLAUDE.md やツールの設定は、依頼の切れ目で変えます。途中で変えると、そこから先の使い回しが効かなくなります。</li>
+        <li><b>長い中断のあとは要約してから</b>/compact で短くしてから再開します。古い会話を、そのまま送り直さずに済みます。</li>
+        <li><b>使い回しの割合に安心しない</b>割合が高いのは正常ですが、量は数えられます。会話を短くすることが、減らす基本です。</li>
+      </ul></div>
+    </section>
+
+    <section class="grid2" aria-label="使った場所">
+      <div class="card" aria-labelledby="hTask">
+        <div class="sechead">
+          <h2 id="hTask">依頼ごとのトークン消費</h2>
+          <p id="taskSub" class="sub"></p>
+        </div>
+        <div id="taskLegend" class="legend"></div>
+        <div id="tasks" class="rows" role="list"></div>
+        <details class="twin"><summary>表で見る</summary><div class="tablebox"><table id="taskTable"></table></div></details>
+      </div>
+      <div class="card" aria-labelledby="hTool">
+        <div class="sechead">
+          <h2 id="hTool">会話を長くしたもの(ツール別)</h2>
+          <p class="sub">ファイルの読み込みやコマンド実行などの結果は、そのまま会話に積まれます。次のやり取りで会話が長くなった分を、直前に使ったツールごとに合計しています(結果とその前後の文章を含みます)。</p>
+        </div>
+        <div id="tools" class="rows" role="list"></div>
+        <details class="twin"><summary>表で見る</summary><div class="tablebox"><table id="toolTable"></table></div></details>
+      </div>
+    </section>
+
+    <section class="card" aria-labelledby="hCtx">
+      <div class="sechead">
+        <h2 id="hCtx">会話の長さの推移</h2>
+        <p class="sub">1 回のやり取りで Claude が読み直した、これまでの会話の総量です。線が急に上がるところは、大きなファイルや長いコマンド結果が入った場所です。</p>
+      </div>
+      <div id="ctxChart" class="plot" tabindex="0" role="img"></div>
+      <p class="cap" id="ctxCap"></p>
+      <details class="twin"><summary>表で見る</summary><div class="tablebox"><table id="ctxTable"></table></div></details>
+    </section>
+
+    <section class="card" aria-labelledby="hFind">
+      <div class="sechead"><h2 id="hFind">分かったこと</h2></div>
+      <ul id="finds" class="finds"></ul>
+    </section>
+
+    <details class="gloss"><summary>用語の説明</summary>
+      <dl>
+        <dt>トークン</dt><dd>Claude が読んだり書いたりする文章の量の単位です。日本語ではおよそ 1 文字が 1〜2 トークンです。</dd>
+        <dt>やり取り</dt><dd>Claude に 1 回送って、1 回返事をもらうまでの流れです。1 つの依頼の中で、何度も繰り返されます。</dd>
+        <dt>会話の長さ</dt><dd>1 回のやり取りで Claude が読み直す、これまでの会話の総量です(コンテキストとも呼びます)。やり取りのたびに毎回全部が送られるため、長いほど 1 回あたりの消費が増えます。</dd>
+        <dt>使い回し(キャッシュ)</dt><dd>前回と同じ内容を、Claude が覚えておく仕組みです。使い回せた分は速く、安く処理されます。ただし、この画面ではトークン数としては数えます。</dd>
+        <dt>要約(/compact)</dt><dd>長くなった会話を、短い要約に置き換える操作です。自動で行われることもあります。トークンは減りますが、細かい経緯は忘れやすくなります。</dd>
+        <dt>サブエージェント</dt><dd>調べものなどを、別の担当に任せる機能です。任せた側の会話は別に数えられます。</dd>
+      </dl>
+    </details>
+    <p class="foot">トークンは、記録に残っている使用量(新しく送った分、使い回した分、Claude の返答)をそのまま数えています。最初に表示しているのは、作り物のサンプルデータです。減らせる量は、実際の会話の長さの増え方から計算した目安です。「席を離れていた」判定は、5 分以上のあきを基準にしています。使い回し分が利用制限にどれだけ数えられるかは公開されていないため、ここでは区別せずに数えています。</p>
+  </div>
+</main>
+<div id="tip" hidden></div>
+
+<script>
+/* Token Ledger core: parse a Claude Code session transcript (JSONL), count tokens per task, tool and time, and estimate savings in tokens. */
+(function (root) {
+  'use strict';
+
+  var NO_TOOL = 'ツールなし(返答・入力文)';
+  var TOOL_JA = { Read: 'ファイルを読む', Bash: 'コマンド実行', Grep: '内容を検索', Glob: 'ファイル名を検索', Edit: 'ファイルを編集', Write: 'ファイルを作成', MultiEdit: 'まとめて編集', WebFetch: 'Webページ取得', WebSearch: 'Web検索', Task: 'サブエージェント', Agent: 'サブエージェント' };
+  function toolJa(n) { return TOOL_JA[n] ? n + '(' + TOOL_JA[n] + ')' : n; }
+  var TTL_MS = 5 * 60 * 1000;
+  var DEDUP = { Read: 1, Grep: 1, Glob: 1, WebFetch: 1 };
+  var EDITS = { Edit: 1, Write: 1, MultiEdit: 1, NotebookEdit: 1 };
+  var TOOL_TIPS = {
+    Read: 'ファイルを丸ごと読ませず、「○○関数の部分だけ」「100〜200行目だけ」のように範囲を指示するか、先に検索で場所を絞ってから読ませます。',
+    Bash: 'コマンドの出力が長いと、その全部が会話に残ります。「最後の20行だけ見せて」「エラーの行だけ見せて」のように、出力を絞るよう頼みます。',
+    Grep: '検索結果が多いときは、件数を絞るか、まずファイル名だけを出させます。',
+    Glob: 'ファイル検索の条件を細かくして、ヒットする数を減らします。',
+    WebFetch: 'Webページは全文が会話に入ります。必要な部分だけを読むよう頼むか、要点だけ確認させます。',
+    Task: 'サブエージェントには「結果は短い要約で返して」と依頼文で指定します。'
+  };
+  var TIP_DEFAULT = 'このツールの結果が大きくなっています。必要な部分だけを返すよう、頼み方を絞ります。';
+
+  function compact(n) {
+    n = Math.round(n);
+    if (n < 1000) return String(n);
+    if (n < 1e6) return (n / 1000).toFixed(n < 10000 ? 1 : 0).replace(/\.0$/, '') + 'k';
+    return (n / 1e6).toFixed(n < 1e7 ? 2 : 1).replace(/\.?0+$/, '') + 'M';
+  }
+  function full(n) { return Math.round(n).toLocaleString('en-US'); }
+  function clip(s, n) { return s.length > n ? s.slice(0, n - 1) + '…' : s; }
+  function pct1(x) { return (x * 100).toFixed(1).replace(/\.0$/, '') + '%'; }
+  function dur(ms) {
+    var s = Math.round(ms / 1000);
+    if (s < 60) return s + ' 秒';
+    var m = Math.round(s / 60);
+    if (m < 60) return m + ' 分';
+    var h = Math.floor(m / 60), r = m % 60;
+    return h + ' 時間' + (r ? ' ' + r + ' 分' : '');
+  }
+
+  /* ---------- parsing ---------- */
+  function num(x) { return typeof x === 'number' && isFinite(x) && x >= 0 ? Math.min(x, 1e12) : 0; }
+  function cleanTitle(s) {
+    s = String(s).slice(0, 20000);
+    s = s.replace(/<system-reminder>[\s\S]*?<\/system-reminder>/g, ' ').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+    return s || '(空の入力)';
+  }
+
+  // Returns the prompt text for a real user prompt, or null for tool results and other non-prompts.
+  function userPrompt(content) {
+    if (typeof content === 'string') return content;
+    if (!Array.isArray(content)) return null;
+    var txt = '', img = false;
+    for (var i = 0; i < content.length; i++) {
+      var b = content[i];
+      if (!b) continue;
+      if (b.type === 'tool_result') return null;
+      if (b.type === 'text' && typeof b.text === 'string') txt += b.text + ' ';
+      if (b.type === 'image') img = true;
+    }
+    if (txt.trim()) return txt;
+    return img ? '(画像のみ)' : null;
+  }
+
+  function toolUse(name, input) {
+    input = input && typeof input === 'object' ? input : {};
+    var path = String(input.file_path || input.path || input.notebook_path || '');
+    var key;
+    if (name === 'Read') key = path + (input.offset !== undefined ? '@' + input.offset : '') + (input.limit !== undefined ? '+' + input.limit : '');
+    else if (name === 'Grep') key = String(input.pattern || '') + (path ? ' in ' + path : '');
+    else if (name === 'Glob') key = String(input.pattern || '');
+    else if (name === 'Bash') key = clip(String(input.command || ''), 80);
+    else if (name === 'WebFetch') key = String(input.url || '');
+    else if (name === 'Task' || name === 'Agent') key = clip(String(input.description || input.prompt || ''), 40);
+    else key = path;
+    return { name: name, key: key, path: path };
+  }
+
+  function parseSession(text) {
+    var lines = text.split(/\r?\n/);
+    var calls = [], byId = new Map(), tasks = [];
+    var cur = null, bad = 0, n = 0, pendingCompact = false, lastMain = null, errIds = new Set();
+    function newTask(title) { cur = { id: tasks.length + 1, title: title }; tasks.push(cur); }
+
+    for (var li = 0; li < lines.length; li++) {
+      var s = lines[li].trim();
+      if (!s) continue;
+      n++;
+      var o;
+      try { o = JSON.parse(s); } catch (e) { bad++; continue; }
+      if (!o || typeof o !== 'object') continue;
+      var m = o.message, side = !!o.isSidechain;
+
+      if (o.type === 'user' && m) {
+        if (o.isCompactSummary) { if (!side) pendingCompact = true; continue; }
+        if (side || o.isMeta) continue;
+        if (Array.isArray(m.content)) m.content.forEach(function (rb) { if (rb && rb.type === 'tool_result' && rb.is_error === true && rb.tool_use_id) errIds.add(rb.tool_use_id); });
+        var p = userPrompt(m.content);
+        if (p === null) continue;
+        var title = cleanTitle(p);
+        if (/^\[Request interrupted/.test(title)) continue;
+        newTask(title);
+        cur.text = title.slice(0, 800); cur.len = title.length;
+        cur.img = Array.isArray(m.content) && m.content.some(function (b2) { return b2 && b2.type === 'image'; });
+      } else if (o.type === 'assistant' && m && m.usage) {
+        var id = m.id || o.uuid || ('anon' + calls.length);
+        var u = m.usage;
+        var c = byId.get(id);
+        if (!c) {
+          if (!cur) newTask('(依頼より前の呼び出し)');
+          c = { id: id, side: side, task: cur.id, tools: [], uses: [], toolIds: new Set(), in: 0, cw: 0, cr: 0, out: 0, afterCompact: false, model: typeof m.model === 'string' ? m.model.slice(0, 80) : '', ts: undefined, parent: side && lastMain ? lastMain.id : null };
+          if (!side && pendingCompact) { c.afterCompact = true; pendingCompact = false; }
+          byId.set(id, c);
+          calls.push(c);
+          if (!side) lastMain = c;
+        }
+        var ts = typeof o.timestamp === 'string' ? Date.parse(o.timestamp) : NaN;
+        if (!(ts > 9.46e11 && ts < 4.1e12)) ts = NaN;
+        if (!isNaN(ts) && c.ts === undefined) c.ts = ts;
+        // one API response is often written as several lines with the same id; keep the largest figures
+        c.in = Math.max(c.in, num(u.input_tokens));
+        c.cw = Math.max(c.cw, num(u.cache_creation_input_tokens));
+        c.cr = Math.max(c.cr, num(u.cache_read_input_tokens));
+        c.out = Math.max(c.out, num(u.output_tokens));
+        if (Array.isArray(m.content)) {
+          for (var k = 0; k < m.content.length; k++) {
+            var b = m.content[k];
+            if (b && b.type === 'tool_use') {
+              var key = b.id || (id + ':' + c.tools.length);
+              if (!c.toolIds.has(key)) {
+                c.toolIds.add(key);
+                c.tools.push(b.name || '(名前なし)');
+                var tuo = toolUse(b.name || '(名前なし)', b.input); tuo.id = b.id || null; c.uses.push(tuo);
+              }
+            }
+          }
+        }
+      }
+    }
+    calls = calls.filter(function (c) { return c.in + c.cw + c.cr + c.out > 0; });
+    if (!calls.length) throw new Error('トークン使用量(usage)を含む呼び出しが見つかりません。Claude Code のセッション記録(.jsonl)か確認してください。');
+    return { calls: calls, tasks: tasks, bad: bad, lines: n, errIds: errIds };
+  }
+
+  /* ---------- analysis (everything is counted in tokens) ---------- */
+  function analyze(P, opt) {
+    opt = opt || {};
+    var win = opt.win || 200000;
+    var side = opt.side !== false;
+    var main = P.calls.filter(function (c) { return !c.side; });
+    var used = side ? P.calls : main;
+
+    var tmap = new Map();
+    P.tasks.forEach(function (t) {
+      tmap.set(t.id, { id: t.id, title: t.title, text: t.text || t.title, len: t.len || 0, img: !!t.img, in: 0, cw: 0, cr: 0, out: 0, calls: 0, mainCalls: 0, sub: 0, peak: 0, first: 0, tStart: undefined, tEnd: undefined });
+    });
+    used.forEach(function (c) {
+      var t = tmap.get(c.task);
+      t.in += c.in; t.cw += c.cw; t.cr += c.cr; t.out += c.out; t.calls++; if (c.side) t.sub++;
+    });
+
+    var M = main.map(function (c, i) { return { idx: i + 1, ctx: c.in + c.cw + c.cr, ts: c.ts, call: c, task: c.task, tools: c.tools, comp: false, delta: null, brk: null }; });
+    M.forEach(function (m, i) {
+      var t = tmap.get(m.task);
+      t.mainCalls++;
+      if (!t.first) t.first = m.idx;
+      if (m.ctx > t.peak) t.peak = m.ctx;
+      if (m.ts !== undefined) { if (t.tStart === undefined) t.tStart = m.ts; t.tEnd = m.ts; }
+      if (i > 0) {
+        m.delta = m.ctx - M[i - 1].ctx;
+        m.comp = m.call.afterCompact || (m.ctx < M[i - 1].ctx * 0.6 && M[i - 1].ctx - m.ctx > 8000);
+      }
+    });
+    // cache breaks: the previous call's whole context should have been read back from the cache
+    var gaps = [];
+    M.forEach(function (m, i) {
+      if (i === 0) return;
+      var prev = M[i - 1];
+      var gap = (m.ts !== undefined && prev.ts !== undefined) ? m.ts - prev.ts : null;
+      if (gap !== null && gap > TTL_MS) gaps.push({ from: prev.idx, to: m.idx, ms: gap });
+      if (m.comp) return;
+      var lost = prev.ctx - m.call.cr;
+      if (lost > Math.max(2000, prev.ctx * 0.1)) {
+        m.brk = { kind: gap !== null && gap > TTL_MS ? 'idle' : 'prefix', lost: lost, gapMin: gap === null ? null : gap / 60000 };
+      }
+    });
+    var timed = M.length > 1 && M.every(function (m) { return m.ts !== undefined; }) && M[M.length - 1].ts > M[0].ts;
+    var t0 = timed ? M[0].ts : null, t1 = timed ? M[M.length - 1].ts : null;
+
+    var tasks = Array.from(tmap.values()).map(function (t) {
+      t.newTok = t.in + t.cw;
+      t.total = t.in + t.cw + t.cr + t.out;
+      t.fresh = t.in + t.cw + t.out;
+      t.dur = t.tStart !== undefined && t.tEnd !== undefined && t.mainCalls > 1 ? t.tEnd - t.tStart : null;
+      return t;
+    });
+
+    // context growth by tool: growth into call i+1 belongs to the tools called in call i
+    var tg = new Map(), growTotal = 0;
+    for (var i = 0; i < M.length - 1; i++) {
+      var nx = M[i + 1];
+      if (nx.comp) continue;
+      var d = nx.ctx - M[i].ctx;
+      if (d <= 0) continue;
+      var names = M[i].tools.length ? M[i].tools : [NO_TOOL];
+      var part = d / names.length;
+      names.forEach(function (nm) {
+        var g = tg.get(nm) || { name: nm, growth: 0, uses: 0 };
+        g.growth += part; g.uses++; tg.set(nm, g);
+      });
+      growTotal += d;
+    }
+    var tools = Array.from(tg.values()).sort(function (a, b) { return b.growth - a.growth; }).map(function (g) {
+      g.avg = g.growth / g.uses; g.share = growTotal ? g.growth / growTotal : 0; return g;
+    });
+
+    var T = { in: 0, cw: 0, cr: 0, out: 0 };
+    used.forEach(function (c) { T.in += c.in; T.cw += c.cw; T.cr += c.cr; T.out += c.out; });
+    var read = T.in + T.cw + T.cr;
+    var processed = read + T.out;
+    var totals = {
+      in: T.in, cw: T.cw, cr: T.cr, out: T.out, read: read, processed: processed, fresh: T.in + T.cw + T.out,
+      cacheShare: read ? T.cr / read : 0, outShare: processed ? T.out / processed : 0,
+      calls: used.length, mainCalls: M.length, subCalls: used.length - M.length,
+      spanMs: timed ? t1 - t0 : null
+    };
+
+    var peak = M.reduce(function (a, m) { return m.ctx > a.ctx ? m : a; }, M[0]);
+    var comps = M.filter(function (m) { return m.comp; }).map(function (m) { return m.idx; });
+
+    /* findings */
+    var F = [];
+    var ttl = function (id) { return clip(tmap.get(id).title, 28); };
+    var pk = Math.round(peak.ctx / win * 100);
+    F.push({ kind: pk >= 80 ? 'warn' : 'info', parts: ['会話がいちばん長くなったのは、依頼 #' + peak.task + '「' + ttl(peak.task) + '」の途中(やり取り #' + peak.idx + ')で、', { b: compact(peak.ctx) }, ' トークンです。上限 ' + compact(win) + ' の ', { b: pk + '%' }, ' にあたります。' + (pk >= 80 ? '上限に近いと、古い内容が要約されて細かい経緯を忘れやすくなります。' : '')] });
+
+    if (comps.length) {
+      F.push({ kind: 'info', parts: ['会話が要約されて短くなった箇所が ', { b: comps.length + ' 回' }, 'あります(やり取り ' + comps.slice(0, 5).map(function (x) { return '#' + x; }).join('、') + (comps.length > 5 ? ' ほか' : '') + ')。要約の直後は、会話全体を最初から読み直すため、その1回だけ消費が増えます。'] });
+    } else if (pk >= 50) {
+      var lastCtx = M[M.length - 1].ctx, gs = [];
+      for (var j = Math.max(0, M.length - 11); j < M.length - 1; j++) { var dd = M[j + 1].ctx - M[j].ctx; if (dd > 0) gs.push(dd); }
+      var avg = gs.length ? gs.reduce(function (a, b) { return a + b; }, 0) / gs.length : 0;
+      var parts = ['会話の要約はまだ起きていません。'];
+      if (avg > 0 && lastCtx < win * 0.9) {
+        parts.push('直近のペース(1 回あたり +', { b: compact(avg) }, ')だと、あと約 ', { b: Math.ceil((win * 0.9 - lastCtx) / avg) + ' 回' }, 'のやり取りで上限の 90% に達し、要約が必要になります。');
+      }
+      F.push({ kind: pk >= 70 ? 'warn' : 'info', parts: parts });
+    }
+
+    if (tools.length) {
+      var top = tools[0], sp = Math.round(top.share * 100);
+      F.push({ kind: sp >= 50 ? 'warn' : 'info', parts: ['会話が長くなった原因の ', { b: sp + '%' }, ' は、', { b: toolJa(top.name) }, ' の結果です(1 回あたり平均 +' + compact(top.avg) + ' トークン)。ここを絞るのがいちばん効きます。'] });
+    }
+
+    var byTotal = tasks.slice().sort(function (a, b) { return b.total - a.total; });
+    if (byTotal.length && processed > 0) {
+      var tc = byTotal[0], cp = Math.round(tc.total / processed * 100);
+      F.push({ kind: cp >= 50 && tasks.length > 1 ? 'warn' : 'info', parts: ['いちばんトークンを使った依頼は #' + tc.id + '「' + ttl(tc.id) + '」で、全体の ', { b: cp + '%' }, '(' + compact(tc.total) + ' トークン、やり取り ' + tc.calls + ' 回)です。'] });
+    }
+
+    var cs = Math.round(totals.cacheShare * 100);
+    if (totals.cacheShare < 0.6) {
+      F.push({ kind: 'warn', parts: ['送った内容のうち、前回の会話を使い回せた(キャッシュ)のは ', { b: cs + '%' }, ' だけです。使い回しが効いていない可能性があります。作業の途中で設定を変えたり、長く席を離れたりしていないか確認してください。'] });
+    } else {
+      F.push({ kind: 'info', parts: ['送った内容の ', { b: cs + '%' }, ' は、前回までの会話の使い回し(キャッシュ)です。これは正常で、良い状態です。ただし使い回した分も数えるので、消費量は「やり取りの回数 × 会話の長さ」でほぼ決まります。減らすには、会話を短く保つのが近道です。'] });
+    }
+
+    /* ---------- opportunities (savings in tokens) ---------- */
+    var N = M.length;
+    var nextComp = new Array(N + 1);
+    nextComp[N] = N;
+    for (var q = N - 1; q >= 0; q--) nextComp[q] = M[q].comp ? q : nextComp[q + 1];
+
+    // every tool result that landed in the context, and the tokens processed because it stays there until the next compaction
+    var events = [], evBySrc = new Map();
+    for (var p = 0; p < N - 1; p++) {
+      var nxt = M[p + 1];
+      if (nxt.comp) continue;
+      var dl = nxt.ctx - M[p].ctx;
+      if (dl <= 0) continue;
+      var us = M[p].call.uses;
+      if (!us.length) continue;
+      var life = nextComp[p + 2] - (p + 1);
+      var share = dl / us.length;
+      us.forEach(function (u) {
+        var e = { src: M[p].idx, land: nxt.idx, name: u.name, key: u.key, path: u.path, id: u.id, size: share, life: life, carry: share * life };
+        events.push(e);
+        var arr = evBySrc.get(e.src) || []; arr.push(e); evBySrc.set(e.src, arr);
+      });
+    }
+    var carryTotal = events.reduce(function (a, e) { return a + e.carry; }, 0);
+
+    var opps = [];
+    var minSave = processed * 0.005;
+    var mainTokens = M.reduce(function (a, m) { return a + m.ctx; }, 0);
+
+    // A. cache breaks (the token total does not change; the tokens move from cache read to new input)
+    var breaks = M.filter(function (m) { return m.brk; });
+    var refs = [];
+    if (breaks.length) {
+      var idle = breaks.filter(function (m) { return m.brk.kind === 'idle'; }), pre = breaks.filter(function (m) { return m.brk.kind === 'prefix'; });
+      var lostSum = breaks.reduce(function (a, m) { return a + m.brk.lost; }, 0);
+      var tipA = [];
+      if (idle.length) tipA.push('約 5 分何も送らないと、使い回しの記憶が消えて、会話全体を送り直すことになります。キリの良いところまで進めてから席を離れるか、長い中断のあとは /compact で要約するか、新しい会話で始め直します。');
+      if (pre.length) tipA.push(' 作業の途中で CLAUDE.md や、使うツールの設定(MCP)などを変えると、そこから先の使い回しが効かなくなります。設定の変更は、依頼の切れ目でまとめて行います。');
+      opps.push({
+        id: 'cache', kind: 'save', saving: lostSum,
+        title: '待ち時間や設定変更で、使い回し(キャッシュ)が無効になっている',
+        parts: [breaks.length + ' 回のやり取りで、本来は使い回せたはずの ', { b: compact(lostSum) }, ' トークンを、新しく送り直しています(席を離れていた ' + idle.length + ' 回、会話の先頭が変わった ' + pre.length + ' 回)。送ったトークンの合計は変わりませんが、「使い回しを除く」分がその分増えます。'],
+        rows: breaks.slice().sort(function (a, b) { return b.brk.lost - a.brk.lost; }).slice(0, 5).map(function (m) {
+          return { call: m.idx, label: m.brk.kind === 'idle' ? (m.brk.gapMin !== null ? Math.round(m.brk.gapMin) + ' 分' : '') + '離れていたあと' : '会話の先頭が変わったらしい(推定)', value: '送り直し ' + compact(m.brk.lost) + ' トークン' };
+        }),
+        note: '使い回しを除いた数え方で減る量です。送ったトークンの合計は変わりません。',
+        tip: tipA.join('')
+      });
+    }
+
+    // B. duplicate reads in the same context life
+    var seen = new Map(), dupMap = new Map(), saveB = 0, dupCount = 0;
+    for (var pp = 0; pp < N; pp++) {
+      if (M[pp].comp) seen.clear();
+      M[pp].call.uses.forEach(function (u) {
+        if (EDITS[u.name]) {
+          if (u.path) seen.forEach(function (v, k) { if (v.path === u.path) seen.delete(k); });
+          return;
+        }
+        if (!DEDUP[u.name] || !u.key) return;
+        var k = u.name + '|' + u.key;
+        if (!seen.has(k)) { seen.set(k, { path: u.path }); return; }
+        var cand = (evBySrc.get(M[pp].idx) || []).filter(function (e) { return e.name === u.name && e.key === u.key; })[0];
+        var g = dupMap.get(k) || { name: u.name, key: u.key, count: 1, saved: 0, first: M[pp].idx };
+        g.count++;
+        if (cand) { g.saved += cand.carry; saveB += cand.carry; }
+        dupCount++;
+        dupMap.set(k, g);
+      });
+    }
+    if (dupCount) {
+      opps.push({
+        id: 'dup', kind: 'save', saving: saveB,
+        title: '同じファイルや検索を、何度も繰り返している',
+        parts: ['同じ会話の中で、同じファイルの読み込みや検索を ', { b: dupCount + ' 回' }, ' 繰り返しています。読み直した内容がもう一度会話に積まれ、要約されるまで毎回の送信に含まれ続けます。'],
+        rows: Array.from(dupMap.values()).sort(function (a, b) { return b.saved - a.saved; }).slice(0, 5).map(function (g) {
+          return { call: g.first, label: toolJa(g.name) + ' ' + clip(g.key, 48) + ' を ' + g.count + ' 回', value: '重複した分 −' + compact(g.saved) + ' トークン' };
+        }),
+        tip: '一度読んだ内容は会話に残っています。同じ会話の中では読み直さないよう伝えます。確かめ直したいときも、ファイル全体ではなく必要な行だけを指定します。(ファイルを編集した直後の読み直しは、重複に数えていません。)'
+      });
+    }
+
+    // C. large results that stay in the context
+    var big = events.slice().sort(function (a, b) { return b.carry - a.carry; }).slice(0, 5);
+    if (big.length) {
+      var saveC = big.reduce(function (a, e) { return a + e.carry; }, 0);
+      var tcarry = new Map();
+      events.forEach(function (e) { tcarry.set(e.name, (tcarry.get(e.name) || 0) + e.carry); });
+      var tlist = Array.from(tcarry.entries()).sort(function (a, b) { return b[1] - a[1]; });
+      var topTools = tlist.slice(0, 2);
+      opps.push({
+        id: 'big', kind: 'save', saving: saveC,
+        title: '大きな結果が、会話に残り続けている',
+        parts: ['大きい結果の上位 5 件が会話に入っていなければ、最大で ', { b: compact(saveC) }, ' トークン(全体の ' + pct1(processed ? saveC / processed : 0) + ')減らせます。残り続けた量が多いのは ', { b: topTools.map(function (t) { return toolJa(t[0]) + ' ' + Math.round(carryTotal ? t[1] / carryTotal * 100 : 0) + '%'; }).join('、') }, ' です。'],
+        rows: big.map(function (e) {
+          return { call: e.land, label: toolJa(e.name) + (e.key ? ' ' + clip(e.key, 40) : '') + ' · 結果の大きさ +' + compact(e.size), value: '以後 ' + e.life + ' 回のやり取りで送られ続け、合計 ' + compact(e.carry) + ' トークン' };
+        }),
+        tip: topTools.map(function (t) { return TOOL_TIPS[t[0]] || TIP_DEFAULT; }).join('')
+      });
+    }
+
+    // D. compaction threshold what-if
+    var postCtx = (function () {
+      var cs2 = M.filter(function (m) { return m.comp; }).map(function (m) { return m.ctx; }).sort(function (a, b) { return a - b; });
+      return cs2.length ? cs2[Math.floor(cs2.length / 2)] : M[0].ctx + 4000;
+    })();
+    // every call processes the whole context at that moment, so the total is the sum of the context lengths
+    function sim(mode, Tcap) {
+      var v = M[0].ctx, c = v, resets = 0;
+      for (var i2 = 1; i2 < N; i2++) {
+        var m2 = M[i2], g = m2.comp ? 0 : Math.max(0, m2.ctx - M[i2 - 1].ctx);
+        if (mode === 'actual') {
+          if (m2.comp) { v = m2.ctx; resets++; c += v; continue; }
+        } else if (v + g > Tcap) { v = postCtx + g; resets++; c += v; continue; }
+        v += g; c += v;
+      }
+      return { tok: c, resets: resets };
+    }
+    var whatif = null;
+    if (N > 3 && processed > 0) {
+      var base0 = sim('actual');
+      var cands = [40000, 60000, 80000, 100000, 120000, 150000].filter(function (t) { return t < peak.ctx * 0.98 && t > postCtx * 1.5; });
+      var res = cands.map(function (t) { var r = sim('T', t); return { T: t, saving: base0.tok - r.tok, resets: r.resets }; });
+      if (res.length) {
+        var best = res.reduce(function (a, r) { return r.saving > a.saving ? r : a; }, res[0]);
+        whatif = { base: base0, res: res, best: best, post: postCtx };
+        if (best.saving >= minSave) {
+          opps.push({
+            id: 'compact', kind: 'save', saving: best.saving,
+            title: '会話を要約するタイミングが遅い',
+            parts: ['会話が ', { b: compact(best.T) }, ' トークンに達したら要約(/compact)する運用なら、全体のトークンを ', { b: pct1(best.saving / processed) }, ' 減らせる見込みです(要約 ' + best.resets + ' 回。いまの要約の位置との比較)。'],
+            bars: res.map(function (r) { return { label: compact(r.T) + ' で要約', value: r.saving, pct: processed ? r.saving / processed : 0, resets: r.resets, best: r === best }; }),
+            note: '試算の前提: 会話が長くなる量は実際のまま、要約後は ' + compact(postCtx) + ' の長さに戻るものとして計算しています。',
+            tip: '要約すると細かい経緯は短い説明に置き換わるため、節約と引き換えに忘れることがあります。依頼がひと区切りついたところで /compact を実行するのが安全です。'
+          });
+        }
+      }
+    }
+
+    // E / F. reference cards (no saving claimed)
+    var outs = M.map(function (m) { return m.call.out; }).sort(function (a, b) { return a - b; });
+    var med = outs[Math.floor(outs.length / 2)] || 0;
+    var heavy = M.filter(function (m) { return m.call.out >= Math.max(1500, med * 3); });
+    if (heavy.length) {
+      var hc = heavy.reduce(function (a, m) { return a + m.call.out; }, 0);
+      refs.push({
+        id: 'out', kind: 'ref', saving: null,
+        title: 'Claude の返答が長いやり取りがある',
+        parts: ['返答が ', { b: compact(Math.max.apply(null, heavy.map(function (m) { return m.call.out; }))) }, ' トークンに達するやり取りが ' + heavy.length + ' 回あり、合計で ', { b: compact(hc) }, ' トークン(全体の ' + pct1(processed ? hc / processed : 0) + ')です。'],
+        rows: heavy.slice().sort(function (a, b) { return b.call.out - a.call.out; }).slice(0, 5).map(function (m) {
+          return { call: m.idx, label: m.tools.length ? m.tools.map(toolJa).join('、') : '文章だけの返答', value: '返答 ' + compact(m.call.out) + ' トークン' };
+        }),
+        tip: 'ファイルの作成や編集では、書き出す内容がそのまま返答の長さになります。大きなファイルは分けて作る、変更する部分だけを直す、と頼むと減らせます。'
+      });
+    }
+    if (side && totals.subCalls > 0) {
+      var tk = function (c) { return c.in + c.cw + c.cr + c.out; };
+      var subTok = 0, byParent = new Map();
+      P.calls.forEach(function (c) { if (c.side) { subTok += tk(c); if (c.parent) byParent.set(c.parent, (byParent.get(c.parent) || 0) + tk(c)); } });
+      var rowsF = [];
+      M.forEach(function (m, i2) {
+        if (!byParent.has(m.call.id)) return;
+        var ret = i2 < N - 1 && !M[i2 + 1].comp ? Math.max(0, M[i2 + 1].ctx - m.ctx) : 0;
+        rowsF.push({ call: m.idx, label: m.tools.filter(function (t) { return t === 'Task' || t === 'Agent'; })[0] || 'サブエージェント', tok: byParent.get(m.call.id), ret: ret });
+      });
+      refs.push({
+        id: 'sub', kind: 'ref', saving: null,
+        title: 'サブエージェントのトークン消費',
+        parts: ['サブエージェント(調べものを別担当に任せる機能)が ' + totals.subCalls + ' 回動き、', { b: compact(subTok) }, ' トークン(全体の ' + pct1(processed ? subTok / processed : 0) + ')を使っています。メインの会話に戻ってきた量は平均 +' + compact(rowsF.length ? rowsF.reduce(function (a, r) { return a + r.ret; }, 0) / rowsF.length : 0) + ' で、調べものを任せた分だけ、メインの会話が長くなるのを防げています。'],
+        rows: rowsF.slice().sort(function (a, b) { return b.tok - a.tok; }).slice(0, 5).map(function (r) {
+          return { call: r.call, label: r.label, value: '任せた側 ' + compact(r.tok) + ' → メインに戻った量 +' + compact(r.ret) };
+        }),
+        tip: 'メインに戻る量に比べて任せた側の消費が大きいときは、「このフォルダだけ調べて」「結論を 5 行で」のように、調べる範囲と報告の長さを指定します。'
+      });
+    }
+
+
+    // G. history from earlier requests that is still in the context when a new request starts
+    if (tasks.length > 1) {
+      var base1 = M[0].ctx, rowsG = [], saveG = 0, nG = 0;
+      tasks.forEach(function (t) {
+        if (!t.first || t.first === 1) return;
+        var s0 = t.first - 1;
+        if (M[s0].comp) return;
+        var excess = Math.max(0, M[s0].ctx - base1 - 2000);
+        if (excess < 8000) return;
+        var endI = Math.min(s0 + t.mainCalls - 1, nextComp[s0 + 1] - 1);
+        var cnt = endI - s0 + 1;
+        if (cnt < 1) return;
+        saveG += excess * cnt; nG++;
+        rowsG.push({ call: M[s0].idx, label: '依頼 #' + t.id + '「' + clip(t.title, 24) + '」の開始時に、前の内容が ' + compact(excess) + ' 残っていた', value: '以後 ' + cnt + ' 回の送信で合計 ' + compact(excess * cnt) + ' トークン', v: excess * cnt });
+      });
+      if (nG) {
+        rowsG.sort(function (a, b) { return b.v - a.v; });
+        opps.push({
+          id: 'carry', kind: 'save', saving: saveG,
+          title: '前の依頼の内容を引きずったまま、次の依頼を始めている',
+          parts: ['前の依頼の内容が残ったまま、新しい依頼を始めた箇所が ', { b: nG + ' か所' }, ' あります。新しい依頼には要らない内容も、毎回の送信に含まれて読み直されています。'],
+          rows: rowsG.slice(0, 5).map(function (r) { return { call: r.call, label: r.label, value: r.value }; }),
+          note: '前の依頼と関係が深い場合は、完全には切り離せません。ここに出した量は、すべて切り離せた場合の上限の目安です。',
+          tip: '前の依頼と関係がなければ、区切りで /clear を実行するか、新しい会話で始めます。前の依頼の続きの作業なら、そのままで構いません。'
+        });
+      }
+    }
+
+    // H. the fixed base that rides along on every call
+    var baseCtx = M[0].ctx;
+    if (N >= 5 && baseCtx >= 12000 && !M[0].comp && mainTokens > 0) {
+      var shareH = baseCtx * N / mainTokens;
+      if (shareH >= 0.06) {
+        opps.push({
+          id: 'base', kind: 'save', saving: baseCtx * N * 0.3,
+          title: '毎回送られる「土台」が大きい',
+          parts: ['会話の最初の時点で、すでに ', { b: compact(baseCtx) }, ' トークンあります(指示書の CLAUDE.md、使えるツールの一覧、各種の設定などです)。これが毎回のやり取りに含まれ、会話全体の読み直しのうち ', { b: pct1(shareH) }, ' を占めています。'],
+          note: '土台を 3 割軽くできた場合の量です。最初のやり取りの時点の会話の長さを「土台」とみなしています(最初の指示の分も含みます)。',
+          tip: 'CLAUDE.md を短くします。使っていない MCP サーバー(外部ツールの接続)を止めます。不要なプラグインを外します。土台が 1 割軽くなると、毎回の送信が 1 割ずつ軽くなります。'
+        });
+      }
+    }
+
+    // I. read-only lookups done one at a time
+    var RO = { Read: 1, Grep: 1, Glob: 1 };
+    var runs = [], runCur = null;
+    M.forEach(function (m, i3) {
+      var simple = m.tools.length === 1 && RO[m.tools[0]] && !m.comp;
+      if (simple) { if (!runCur) { runCur = { first: m.idx, n: 0, extra: 0, tools: {} }; runs.push(runCur); } runCur.n++; if (runCur.n > 1) runCur.extra += m.ctx; runCur.tools[m.tools[0]] = 1; }
+      else runCur = null;
+    });
+    runs = runs.filter(function (r) { return r.n >= 3; });
+    if (runs.length) {
+      var extraI = runs.reduce(function (a, r) { return a + r.extra; }, 0), callsI = runs.reduce(function (a, r) { return a + r.n; }, 0);
+      opps.push({
+        id: 'batch', kind: 'save', saving: extraI * 0.5,
+        title: '調べものを 1 つずつ細切れに進めている',
+        parts: ['ファイルの読み込みや検索を、1 回ずつ送る流れが ', { b: runs.length + ' か所' }, '(合計 ' + callsI + ' 回)あります。1 回送るたびに会話全体が読み直されます。まとめて頼めば、送る回数が減ります。2 回目以降の送信の合計は ', { b: compact(extraI) }, ' トークンです。'],
+        rows: runs.slice().sort(function (a, b) { return b.extra - a.extra; }).slice(0, 5).map(function (r) {
+          return { call: r.first, label: Object.keys(r.tools).map(toolJa).join('、') + ' を ' + r.n + ' 回続けて実行', value: '2 回目以降の送信 ' + compact(r.extra) + ' トークン' };
+        }),
+        note: '送る回数が半分になった場合の量です。すべてをまとめられるとは限りません。',
+        tip: '「この 3 つのファイルをまとめて読んで」「関連する検索を同時に実行して」のように、一度に頼みます。'
+      });
+    }
+
+    // J. whole-file rewrites of the same file
+    var wr = new Map();
+    M.forEach(function (m) {
+      m.call.uses.forEach(function (u) {
+        if (u.name !== 'Write' || !u.path) return;
+        var g = wr.get(u.path) || { path: u.path, n: 0, out: 0, first: 0 };
+        g.n++; if (g.n > 1) { g.out += m.call.out / m.call.uses.length; if (!g.first) g.first = m.idx; }
+        wr.set(u.path, g);
+      });
+    });
+    var wrs = Array.from(wr.values()).filter(function (g) { return g.n >= 2; }).sort(function (a, b) { return b.out - a.out; });
+    var outJ = wrs.reduce(function (a, g) { return a + g.out; }, 0);
+    if (wrs.length && outJ >= Math.max(1500, processed * 0.002)) {
+      opps.push({
+        id: 'rewrite', kind: 'save', saving: outJ * 0.8,
+        title: '同じファイルを、毎回全部書き直している',
+        parts: ['同じファイルを ', { b: wrs.length + ' 件' }, '、2 回以上作り直しています。2 回目以降の返答は、合計で ', { b: compact(outJ) }, ' トークンです。ファイルの全文が、そのまま返答として書かれています。'],
+        note: '全体の書き直しを部分の編集に変えて、返答が 8 割短くなった場合の量です。',
+        rows: wrs.slice(0, 5).map(function (g) { return { call: g.first, label: g.path + ' を ' + g.n + ' 回作成', value: '2 回目以降の返答 ' + compact(g.out) + ' トークン' }; }),
+        tip: '2 回目以降は、「全体を書き直さず、ここだけ直して」と頼みます。部分の編集になり、返答が短く済みます。'
+      });
+    }
+
+    // K. the same command run again and again
+    var rerun = new Map();
+    M.forEach(function (m) { m.call.uses.forEach(function (u) { if (u.name === 'Bash' && u.key) { var g = rerun.get(u.key) || { key: u.key, n: 0, carry: 0, first: m.idx }; g.n++; rerun.set(u.key, g); } }); });
+    events.forEach(function (e) { if (e.name === 'Bash' && rerun.has(e.key)) rerun.get(e.key).carry += e.carry; });
+    var rr2 = Array.from(rerun.values()).filter(function (g) { return g.n >= 3; }).sort(function (a, b) { return b.carry - a.carry; });
+    if (rr2.length) {
+      var carryK = rr2.reduce(function (a, g) { return a + g.carry; }, 0);
+      var saveK = rr2.reduce(function (a, g) { return a + g.carry * (g.n - 1) / g.n; }, 0);
+      opps.push({
+        id: 'rerun', kind: 'save', saving: saveK,
+        title: '同じコマンドを、何度も実行している',
+        parts: ['同じコマンドを 3 回以上実行したものが ', { b: rr2.length + ' 種類' }, 'あります。実行結果が会話に残った分は、合計で ', { b: compact(carryK) }, ' トークンです。テストを直しながら繰り返す場合は、正常な使い方です。'],
+        note: '2 回目以降の実行を省けた場合の量です。テストを直しながらの繰り返しは、省けないことがあります。',
+        rows: rr2.slice(0, 5).map(function (g) { return { call: g.first, label: clip(g.key, 56) + ' を ' + g.n + ' 回', value: '結果が残った分 ' + compact(g.carry) + ' トークン' }; }),
+        tip: '結果が変わらないはずのコマンドは、再実行せずに前の結果を使うよう伝えます。実行が必要なときは、「失敗したテストだけ表示して」のように、出力を絞ります。'
+      });
+    }
+
+    // L. failed tool calls
+    if (P.errIds && P.errIds.size) {
+      var errs = [], streak = 0, prevErr = false;
+      M.forEach(function (m) {
+        var has = m.call.uses.some(function (u) { return u.id && P.errIds.has(u.id); });
+        if (has) { m.call.uses.forEach(function (u) { if (u.id && P.errIds.has(u.id)) errs.push({ idx: m.idx, name: u.name, key: u.key, id: u.id }); }); if (prevErr) streak++; }
+        prevErr = has;
+      });
+      var cByid = new Map(); events.forEach(function (e) { if (e.id) cByid.set(e.id, e); });
+      errs.forEach(function (e) { var ev = cByid.get(e.id); e.carry = ev ? ev.carry : 0; });
+      if (errs.length >= 2) {
+        var carryL = errs.reduce(function (a, e) { return a + e.carry; }, 0);
+        opps.push({
+          id: 'errors', kind: 'save', saving: carryL,
+          title: '失敗したツールの実行がある',
+          parts: ['ツールの実行が失敗した回数は ', { b: errs.length + ' 回' }, '。' + (streak ? '失敗が 2 回以上続いた箇所が ' + streak + ' か所あります。' : '') + 'エラーの内容が会話に積まれ、やり直しの送信も増えます。エラーの結果が会話に残った分は、合計で ', { b: compact(carryL) }, ' トークンです。'],
+          rows: errs.slice().sort(function (a, b) { return b.carry - a.carry; }).slice(0, 5).map(function (e) { return { call: e.idx, label: toolJa(e.name) + (e.key ? ' ' + clip(e.key, 40) : '') + ' が失敗', value: '結果が残った分 ' + compact(e.carry) + ' トークン' }; }),
+          note: '失敗の結果が会話に残らなかった場合の、上限の目安です。',
+          tip: '失敗が続くときは、同じ方法を繰り返させず、「まず原因を説明して、直す前に確認して」と伝えます。やり直しの回数が減ります。'
+        });
+      }
+    }
+
+    // N. heavier models
+    var fam = { Opus: 0, Sonnet: 0, Haiku: 0, 'その他': 0 }, famAny = false;
+    used.forEach(function (c2) {
+      if (!c2.model) return; famAny = true;
+      var k2 = /opus/i.test(c2.model) ? 'Opus' : /sonnet/i.test(c2.model) ? 'Sonnet' : /haiku/i.test(c2.model) ? 'Haiku' : 'その他';
+      fam[k2] += c2.in + c2.cw + c2.cr + c2.out;
+    });
+    if (famAny && processed > 0 && fam.Opus / processed >= 0.3) {
+      refs.push({
+        id: 'model', kind: 'ref', saving: null,
+        title: '重いモデルの利用が多い',
+        parts: ['モデル別のトークンの割合は ', { b: ['Opus', 'Sonnet', 'Haiku', 'その他'].filter(function (k3) { return fam[k3] > 0; }).map(function (k3) { return k3 + ' ' + pct1(fam[k3] / processed); }).join('、') }, ' です。使うモデルによって、利用制限の減り方は変わります。'],
+        tip: '調べものや簡単な修正は、軽いモデルに切り替えます(/model)。難しい設計や原因調査のときだけ、重いモデルを使います。'
+      });
+    }
+
+
+    // ---- how the requests are worded ----
+    var PATHRE = /[\w\-.\/]+\.(ts|tsx|js|jsx|mjs|py|go|rs|java|kt|swift|rb|php|c|cc|cpp|h|cs|md|json|ya?ml|toml|css|scss|html|vue|sh|sql)\b|`[^`]+`|\b\w+\/\w+|\b\w+\(\)|@\S+/i;
+    var BROADRE = /全部|すべて|全体|プロジェクト全体|あらゆる|everything|entire|whole (repo|project|codebase)|all (the )?files/i;
+    var RESEARCHRE = /調べ|調査|探して|探索|確認して|把握|理解|構成|原因|分析|レビュー|explore|investigate|find out|understand|review|analy[sz]e/i;
+    var REDORE = /違う|ちがう|そうじゃ|そうではな|じゃなくて|ではなく|やり直|もう一度|もう1回|戻して|元に戻|やめて|また(落ち|失敗|エラー)|still (fail|broken)|that'?s not|not what|undo|revert|try again/i;
+    var roN = new Map(), hasTask = new Map(), roCarry = new Map();
+    M.forEach(function (m) {
+      var ro = m.tools.some(function (nm) { return RO[nm]; });
+      if (ro) roN.set(m.task, (roN.get(m.task) || 0) + 1);
+      if (m.tools.some(function (nm) { return nm === 'Task' || nm === 'Agent'; })) hasTask.set(m.task, true);
+    });
+    events.forEach(function (e) { if (RO[e.name]) { var tk2 = M[e.src - 1].task; roCarry.set(tk2, (roCarry.get(tk2) || 0) + e.carry); } });
+    var tl = function (t) { return clip(t.text || t.title, 40); };
+    var promptOnes = [];
+
+    // P1. a request that does not say where to look
+    var scopeRows = tasks.filter(function (t) {
+      return t.first && (roN.get(t.id) || 0) >= 6 && !hasTask.get(t.id) && (!PATHRE.test(t.text || '') || BROADRE.test(t.text || ''));
+    }).sort(function (a, b) { return b.total - a.total; });
+    if (scopeRows.length) {
+      var scopeTok = scopeRows.reduce(function (a, t) { return a + t.total; }, 0);
+      promptOnes.push({
+        id: 'scope', kind: 'save', saving: scopeRows.reduce(function (a, t) { return a + (roCarry.get(t.id) || 0); }, 0) * 0.5, group: 'prompt',
+        title: '「どこを」が書かれていない依頼で、探し回っている',
+        parts: ['ファイル名や関数名のない依頼(または「全部」「全体」と広く頼んだ依頼)で、読み込みや検索を 6 回以上くり返した依頼が ', { b: scopeRows.length + ' 件' }, ' あります。この依頼が使ったトークンは、合計で ', { b: compact(scopeTok) }, ' です。場所が分からない分、Claude が探し回っています。'],
+        rows: scopeRows.slice(0, 5).map(function (t) { return { call: t.first, label: '依頼 #' + t.id + '「' + tl(t) + '」· 読み込みや検索 ' + roN.get(t.id) + ' 回', value: '合計 ' + compact(t.total) + ' トークン' }; }),
+        note: '場所を伝えて、探す分が半分になった場合の量です。',
+        example: { bad: tl(scopeRows[0]), good: '「src/auth/token.ts の validateToken で、期限の判定を直して。他のファイルは触らないで」のように、場所と範囲を書く' },
+        tip: 'ファイル名、関数名、エラーメッセージなど、手がかりを依頼に書きます。範囲を決めておくと、探す回数が減ります。'
+      });
+    }
+
+    // P2. instructions that had to be redone
+    var redoRows = tasks.filter(function (t, i4) { return i4 > 0 && t.first && (t.text || '').length <= 80 && REDORE.test(t.text || ''); });
+    if (redoRows.length >= 2) {
+      var redoTok = redoRows.reduce(function (a, t) { return a + t.total; }, 0);
+      promptOnes.push({
+        id: 'redo', kind: 'save', saving: redoTok * 0.5, group: 'prompt',
+        title: 'やり直しの指示が多い',
+        parts: ['「違う」「やり直して」などの言い直しで始まる依頼が ', { b: redoRows.length + ' 件' }, ' あります。この依頼が使ったトークンは、合計で ', { b: compact(redoTok) }, ' です。最初の指示が伝わっていないと、同じ作業を繰り返すことになります。'],
+        rows: redoRows.slice(0, 5).map(function (t) { return { call: t.first, label: '依頼 #' + t.id + '「' + tl(t) + '」', value: '合計 ' + compact(t.total) + ' トークン' }; }),
+        note: '最初の指示が伝わっていれば、やり直しの依頼の半分は不要だった、と仮定した量です。',
+        example: { bad: tl(redoRows[0]), good: '最初に「○○ができて、△△のテストが通ったら完了」と、完成の条件を伝える' },
+        tip: '依頼の最初に、ゴールと完成の条件を書きます。方針が不安なときは、「実行する前に、やり方を 3 行で説明して」と頼むと、手戻りを防げます。'
+      });
+    }
+
+    // P3. large pastes and attachments that stay in the conversation
+    var pasteRows = [], savePaste = 0;
+    tasks.forEach(function (t) {
+      if (!t.first || t.first === 1) return;
+      var s1 = t.first - 1;
+      if (M[s1].comp) return;
+      var size = M[s1].ctx - M[s1 - 1].ctx - M[s1 - 1].call.out;
+      if (size < 8000) return;
+      var life2 = nextComp[s1 + 1] - s1;
+      savePaste += size * life2;
+      pasteRows.push({ call: M[s1].idx, t: t, size: size, life: life2, v: size * life2 });
+    });
+    if (pasteRows.length) {
+      pasteRows.sort(function (a, b) { return b.v - a.v; });
+      promptOnes.push({
+        id: 'paste', kind: 'save', saving: savePaste, group: 'prompt',
+        title: '大きな貼り付けや添付が、会話に残り続けている',
+        parts: ['依頼の開始時に、約 8k トークン以上の内容が一度に入った箇所が ', { b: pasteRows.length + ' か所' }, ' あります。長いログやコードの貼り付け、画像やファイルの添付が考えられます。入った内容は、要約されるまで毎回読み直されます。'],
+        rows: pasteRows.slice(0, 5).map(function (r) { return { call: r.call, label: '依頼 #' + r.t.id + '「' + tl(r.t) + '」の開始時に、約 ' + compact(r.size) + ' が入った' + (r.t.img ? '(画像あり)' : ''), value: '以後 ' + r.life + ' 回の送信で合計 ' + compact(r.v) + ' トークン' }; }),
+        example: { bad: 'エラーログの全文や、ファイルの中身をそのまま貼る', good: 'エラーの前後 20 行だけを貼る。ファイルは貼らずにパスを伝える' },
+        note: '全部を貼らずに済ませられた場合の上限の目安です。',
+        tip: '貼るのは、必要な部分だけにします。ファイルは、中身を貼らずにパスを伝えると、Claude が必要な範囲だけを読みます。画像は、必要な部分だけを切り取って渡します。'
+      });
+    }
+
+    // P4. the same sentence typed into several requests
+    var sentCount = new Map();
+    tasks.forEach(function (t) {
+      var seen2 = {};
+      (t.text || '').split(/[。\n!?！？]/).forEach(function (s2) {
+        s2 = s2.trim();
+        if (s2.length < 8 || s2.length > 80 || seen2[s2]) return;
+        seen2[s2] = 1;
+        var g = sentCount.get(s2) || { s: s2, ids: [] }; g.ids.push(t.id); sentCount.set(s2, g);
+      });
+    });
+    var reps = Array.from(sentCount.values()).filter(function (g) { return g.ids.length >= 3; }).sort(function (a, b) { return b.ids.length - a.ids.length; });
+    if (reps.length) {
+      promptOnes.push({
+        id: 'repeat', kind: 'ref', saving: null, group: 'prompt',
+        title: '毎回同じ指示を書いている',
+        parts: ['3 件以上の依頼に、同じ文が入っているものが ', { b: reps.length + ' 種類' }, ' あります。毎回の入力の手間が増え、書き忘れもおきます。'],
+        rows: reps.slice(0, 5).map(function (g) { var t0 = tmap.get(g.ids[0]); return { call: t0.first || 1, label: '「' + clip(g.s, 40) + '」', value: g.ids.length + ' 件の依頼で使用' }; }),
+        example: { bad: clip(reps[0].s, 50), good: '一度だけ CLAUDE.md に書いておく' },
+        tip: '毎回伝えている前提やルールは、CLAUDE.md に一度だけ書きます。ただし CLAUDE.md は毎回送られるので、短く保ちます。'
+      });
+    }
+
+    // P5. long lookups that could be handed to a subagent
+    var delRows = tasks.filter(function (t) { return t.first && !hasTask.get(t.id) && RESEARCHRE.test(t.text || '') && (roCarry.get(t.id) || 0) >= processed * 0.01 && (roN.get(t.id) || 0) >= 5; })
+      .sort(function (a, b) { return (roCarry.get(b.id) || 0) - (roCarry.get(a.id) || 0); });
+    var delTok = delRows.reduce(function (a, t) { return a + (roCarry.get(t.id) || 0); }, 0);
+    if (delRows.length && delTok >= processed * 0.03) {
+      promptOnes.push({
+        id: 'delegate', kind: 'save', saving: delTok * 0.5, group: 'prompt',
+        title: '調べものを、別担当(サブエージェント)に任せていない',
+        parts: ['読み込みや検索を 5 回以上くり返した依頼が ', { b: delRows.length + ' 件' }, ' あります。調べた結果が会話に残った分は、合計で ', { b: compact(delTok) }, ' トークンです。別担当に任せると、調べる途中の大量の読み込みは、メインの会話に残りません。'],
+        rows: delRows.slice(0, 5).map(function (t) { return { call: t.first, label: '依頼 #' + t.id + '「' + tl(t) + '」· 調べものの結果が残った分', value: compact(roCarry.get(t.id) || 0) + ' トークン' }; }),
+        example: { bad: tl(delRows[0]), good: '「別担当に調べさせて、結論を 5 行で報告して」と頼む' },
+        note: '任せた側の消費もあるため、結果が残った分の半分が減ると仮定した量です。',
+        tip: '広い調べものは、「サブエージェントで調べて、結論だけ報告して」と頼みます。調べた過程が、メインの会話に積まれません。'
+      });
+    }
+    promptOnes.forEach(function (o) { if (o.kind === 'save') opps.push(o); else refs.push(o); });
+
+    var PRI = { model: 1, repeat: 2, out: 3, sub: 4 };
+    refs.sort(function (a, b) { return (PRI[a.id] || 99) - (PRI[b.id] || 99); });
+    var saves = opps.filter(function (o) { return o.saving >= minSave; }).sort(function (a, b) { return b.saving - a.saving; });
+    opps = saves.concat(refs);
+
+
+    /* ================= viewpoint catalogue: every check is evaluated and ranked by estimated reduction ================= */
+    var VP = [];
+    function vp(id, cat, title, saving, basis, tip, rows, unq) {
+      VP.push({ id: id, cat: cat, title: title, saving: Math.max(0, saving || 0), basis: basis, tip: tip, rows: rows || [], unq: !!unq });
+    }
+    function evPick(fn) {
+      var sel = events.filter(fn), carry = 0;
+      sel.forEach(function (e) { carry += e.carry; });
+      sel.sort(function (a, b) { return b.carry - a.carry; });
+      return { n: sel.length, carry: carry, rows: sel.slice(0, 3).map(function (e) { return { call: e.src, label: toolJa(e.name) + (e.key ? ' ' + clip(e.key, 44) : ''), value: '残った分 ' + compact(e.carry) + ' トークン' }; }) };
+    }
+    function famEv(id, cat, title, fn, frac, tip) {
+      var r = evPick(fn);
+      vp(id, cat, title, r.carry * frac, '該当する結果(' + r.n + ' 件)が会話に残った分の ' + Math.round(frac * 100) + '% が減る場合の量', tip, r.rows);
+    }
+    function taskFam(id, title, test, frac, tip) {
+      var sel = tasks.filter(function (t) { return t.first && test(t); }), tot = 0;
+      sel.forEach(function (t) { tot += t.total; });
+      sel.sort(function (a, b) { return b.total - a.total; });
+      vp(id, '指示の出し方', title, tot * frac, '該当する依頼(' + sel.length + ' 件)が使ったトークンの ' + Math.round(frac * 100) + '% が減る場合の量', tip, sel.slice(0, 3).map(function (t) { return { call: t.first, label: '依頼 #' + t.id + '「' + clip(t.text || t.title, 30) + '」', value: '合計 ' + compact(t.total) + ' トークン' }; }));
+    }
+    var isB = function (re) { return function (e) { return e.name === 'Bash' && re.test(e.key); }; };
+    var isR = function (re) { return function (e) { return e.name === 'Read' && re.test(e.path || e.key); }; };
+
+    // ---- command output (24)
+    var CMD = '出力を絞ります。';
+    [
+      ['gitlog', 'git log を絞らずに実行している', /^(?!.*(--oneline|-n\s?\d|\s-\d+\b|--pretty|--format)).*\bgit\s+log\b/, .7, 'git log --oneline -20 のように、件数と形式を絞ります。'],
+      ['gitdiff', 'git diff / show を全文で見ている', /^(?!.*(--stat|--name-only|--name-status|--shortstat)).*\bgit\s+(diff|show)\b/, .6, '--stat や --name-only で概要から見て、必要なファイルだけ中身を見ます。'],
+      ['gitblame', 'git blame や履歴の全件参照', /\bgit\s+(blame|reflog|shortlog)\b/, .7, '範囲(-L)や件数を指定します。'],
+      ['gitsync', 'git clone / fetch / pull の出力', /\bgit\s+(clone|fetch|pull|push)\b(?!.*(-q\b|--quiet))/, .7, '--quiet を付けるよう頼みます。'],
+      ['npminst', 'npm / yarn の install の出力', /\b(npm|yarn|pnpm|bun)\s+(install|i|add|ci)\b/, .8, '--silent を付けるか、「最後の 5 行だけ」と頼みます。'],
+      ['pipinst', 'pip / poetry の install の出力', /\b(pip3?|poetry|uv|conda)\s+(install|add|sync|update)\b/, .8, '-q を付けるか、末尾だけ見ます。'],
+      ['pkgmgr', 'brew / apt などの出力', /\b(brew|apt(-get)?|yum|dnf|apk)\s+(install|update|upgrade)\b/, .8, '-q を付けるか、末尾だけ見ます。'],
+      ['deps2', 'bundle / cargo / go mod などの出力', /\b(bundle|gem|composer|cargo|go|dotnet)\s+(install|update|get|mod|restore|fetch)\b/, .8, '静かに実行するオプションを付けます。'],
+      ['test', 'テスト実行の出力が長い', /\b(jest|vitest|mocha|pytest|rspec|phpunit)\b|\b(npm|yarn|pnpm)\s+(run\s+)?test\b|\b(go|cargo|dotnet|mvn|gradle)\s+test\b/, .6, '「失敗したテストだけ表示して」と頼みます。'],
+      ['build', 'ビルドの出力が長い', /\b(npm|yarn|pnpm)\s+run\s+(build|compile)\b|\btsc\b|\bwebpack\b|\bvite\s+build\b|\b(cargo|go|dotnet|swift)\s+build\b|\bmake\b|\bgradle\b|\bmvn\b|\bxcodebuild\b/, .6, '「エラーの行だけ表示して」と頼みます。'],
+      ['lint', 'リンターやフォーマッターの出力', /\b(eslint|prettier|ruff|flake8|pylint|rubocop|stylelint|mypy|biome)\b/, .6, '件数の要約や、エラーだけの出力を頼みます。'],
+      ['lsrec', 'ls -R / tree / find で一覧を出している', /\bls\s+-\w*R|\btree\b|\bfind\s+\S+\s/, .7, '1 階層だけ見る、深さを制限する、パターンを絞る、と頼みます。'],
+      ['catf', 'cat でファイルを丸ごと出している', /\b(cat|less|more)\s+[^|]/, .6, 'Read で範囲を指定して読みます。'],
+      ['grepb', 'コマンドの grep で件数が多い', /\b(grep|rg|ag|ack)\s/, .5, 'ファイル名だけ(-l)や、件数の制限(-m)を付けます。'],
+      ['docker', 'docker のログや出力', /\bdocker(-compose)?\s+(logs|compose|build|pull|ps|images)\b/, .6, '--tail 50 のように、末尾だけにします。'],
+      ['k8s', 'kubectl / terraform / クラウド CLI の出力', /\b(kubectl|helm|terraform|aws|gcloud|az|pulumi)\s/, .6, '出力の形式や項目を絞ります(--query、-o name など)。'],
+      ['curl', 'curl / wget の応答が長い', /\b(curl|wget|http)\s/, .6, '-s を付け、先頭だけ見ます(| head)。'],
+      ['envps', 'env / ps / top などの一覧', /\b(env|printenv|ps\s|top\b|lsof|netstat|ss\s)/, .7, '必要な項目だけ絞って見ます。'],
+      ['ghcli', 'gh コマンドの出力が長い', /\bgh\s+\w+/, .6, '--json と --jq で、必要な項目だけにします。'],
+      ['dbcli', 'データベース CLI の結果が長い', /\b(psql|mysql|sqlite3|mongosh?|redis-cli)\b/, .6, 'LIMIT を付けるなど、件数を絞ります。'],
+      ['runscript', 'スクリプト実行の出力が長い', /\b(python3?|node|ruby|php|deno|bun)\s+\S+/, .4, '出力を末尾だけにする、ログを抑える、と頼みます。'],
+      ['sedawk', 'sed / awk / head で内容を出している', /\b(sed|awk)\s/, .5, '必要な行だけに絞ります。'],
+      ['wcdu', 'du / df / wc などの一覧', /\b(du|df|wc|stat)\s/, .5, '上位だけ(| head)にします。'],
+      ['xargs', 'パイプで長い一覧を作っている', /\|\s*(xargs|sort|uniq)\b/, .5, '先頭の数件(| head)に絞ります。']
+    ].forEach(function (f) { famEv('cmd-' + f[0], 'コマンドの出力', f[1], isB(f[2]), f[3], f[4]); });
+
+    // ---- file reads by kind (17)
+    [
+      ['lock', 'ロックファイルを読んでいる', /(package-lock\.json|yarn\.lock|pnpm-lock\.yaml|Cargo\.lock|poetry\.lock|Gemfile\.lock|composer\.lock|go\.sum)$/, .9],
+      ['min', '圧縮済みファイルやソースマップを読んでいる', /\.min\.(js|css)$|\.map$/, .9],
+      ['dist', 'ビルド結果のフォルダを読んでいる', /(^|\/)(dist|build|out|\.next|target|coverage)\//, .9],
+      ['deps', '依存ライブラリのフォルダを読んでいる', /(^|\/)(node_modules|vendor|site-packages|venv|\.venv)\//, .9],
+      ['log', 'ログファイルを丸ごと読んでいる', /\.log$/, .8],
+      ['data', 'CSV などのデータを丸ごと読んでいる', /\.(csv|tsv|jsonl|ndjson|parquet)$/, .8],
+      ['ipynb', 'ノートブック(.ipynb)を読んでいる', /\.ipynb$/, .7],
+      ['img', '画像ファイルを読んでいる', /\.(png|jpe?g|gif|webp|bmp)$/, .5],
+      ['pdf', 'PDF を読んでいる', /\.pdf$/, .5],
+      ['svg', 'SVG を読んでいる', /\.svg$/, .7],
+      ['dump', 'SQL ダンプを読んでいる', /\.(sql|dump)$/, .8],
+      ['json', '大きな JSON を読んでいる', /(?<!package|tsconfig|composer|deno|jsconfig)\.json$/, .4],
+      ['gen', '自動生成ファイルを読んでいる', /(generated|__generated__|\.gen\.|\.pb\.|_pb2\.|\.g\.dart)/, .9],
+      ['snap', 'スナップショットを読んでいる', /(__snapshots__|\.snap$)/, .9],
+      ['chg', 'CHANGELOG / LICENSE を読んでいる', /(CHANGELOG|HISTORY|LICENSE|NOTICE)/i, .9],
+      ['docs', '長いドキュメントを丸ごと読んでいる', /\.(md|rst|txt)$/, .3]
+    ].forEach(function (f) {
+      famEv('read-' + f[0], 'ファイルの読み込み', f[1], isR(f[2]), f[3], '読む必要があるか確かめます。不要なら、設定(permissions の deny)で読み取りを禁止します。必要なら、範囲を指定して読みます。');
+    });
+    famEv('read-whole', 'ファイルの読み込み', '大きなファイルを、範囲を指定せずに読んでいる', function (e) { return e.name === 'Read' && e.size >= 8000 && !/[@+]/.test(e.key || ''); }, .5, '「100〜200 行目だけ」「○○関数の部分だけ」のように、範囲を指定して読みます。');
+
+    // ---- tools in general (12) and result size (3)
+    [['Read', 'ファイルの読み込み', 'ファイルの読み込み結果が大きい'], ['Bash', 'コマンドの出力', 'コマンド全般の出力が大きい'], ['Grep', 'ツールの使い方', '検索(内容)の結果が大きい'], ['Glob', 'ツールの使い方', 'ファイル名の検索結果が大きい'],
+     ['WebFetch', 'ツールの使い方', 'Web ページの取得が大きい'], ['WebSearch', 'ツールの使い方', 'Web 検索の結果が積まれている'], ['Edit', 'ツールの使い方', 'ファイル編集の結果が積まれている'], ['Write', 'ツールの使い方', 'ファイル作成の結果が積まれている'],
+     ['NotebookEdit', 'ツールの使い方', 'ノートブック編集の結果が大きい'], ['TodoWrite', 'ツールの使い方', 'TODO 管理のやり取りが積まれている']].forEach(function (f) {
+      famEv('tool-' + f[0], f[1], f[2], function (e) { return e.name === f[0]; }, .3, '「' + toolJa(f[0]) + '」の結果は会話に残ります。必要な部分だけを返すように頼み方を絞ります。');
+    });
+    famEv('tool-Task', 'サブエージェント', 'サブエージェントの結果がメインに戻っている', function (e) { return e.name === 'Task' || e.name === 'Agent'; }, .3, '報告は短い要約で返すように、依頼文で指定します。');
+    famEv('tool-mcp', '設定と環境', '外部ツール(MCP)の結果が積まれている', function (e) { return /^mcp__/.test(e.name); }, .4, '必要な項目だけ返す呼び方にするか、使わない接続を外します。');
+    famEv('size-xl', 'ツールの使い方', '1 回で 20k を超える結果が入っている', function (e) { return e.size >= 20000; }, .5, '出力を絞るか、範囲を指定します。');
+    famEv('size-l', 'ツールの使い方', '1 回で 10k〜20k の結果が入っている', function (e) { return e.size >= 10000 && e.size < 20000; }, .4, '出力を絞るか、範囲を指定します。');
+    famEv('size-m', 'ツールの使い方', '1 回で 5k〜10k の結果が入っている', function (e) { return e.size >= 5000 && e.size < 10000; }, .3, '出力を絞るか、範囲を指定します。');
+    famEv('grep-broad', 'ツールの使い方', '短すぎる、広すぎる検索パターン', function (e) { return e.name === 'Grep' && /^(\.\*?|\\w\+|\^|\*|.{1,2})( in |$)/.test(e.key || ''); }, .6, '具体的な語句で検索します。');
+    famEv('glob-broad', 'ツールの使い方', '広すぎるファイル検索(**/* など)', function (e) { return e.name === 'Glob' && /^(\*\*\/?\*?|\*)$/.test(e.key || ''); }, .7, 'フォルダや拡張子を絞ります。');
+
+    // ---- duplicates per tool (4)
+    var dupBy = {};
+    Array.from(dupMap.values()).forEach(function (g) { dupBy[g.name] = (dupBy[g.name] || 0) + g.saved; });
+    ['Read', 'Grep', 'Glob', 'WebFetch'].forEach(function (nm) {
+      vp('dup-' + nm, 'ツールの使い方', toolJa(nm) + ' を、同じ内容で繰り返している', dupBy[nm] || 0, '同じ会話の中での重複分が、すべて不要だった場合の量', '一度読んだ内容は会話に残っています。読み直さないよう伝えます。', []);
+    });
+
+    // ---- edit patterns (2) and output side (4)
+    var editRuns = [], runE = null;
+    M.forEach(function (m) {
+      var u0 = m.call.uses[0];
+      var ok2 = m.tools.length === 1 && (m.tools[0] === 'Edit' || m.tools[0] === 'MultiEdit') && u0 && u0.path;
+      if (ok2 && runE && runE.path === u0.path) { runE.n++; runE.extra += m.ctx; }
+      else if (ok2) { runE = { path: u0.path, n: 1, extra: 0, first: m.idx }; editRuns.push(runE); }
+      else runE = null;
+    });
+    editRuns = editRuns.filter(function (r) { return r.n >= 3; }).sort(function (a, b) { return b.extra - a.extra; });
+    vp('edit-many', '指示の出し方', '同じファイルを何度も小刻みに編集している', editRuns.reduce(function (a, r) { return a + r.extra; }, 0) * 0.5, '編集の送信回数が半分になった場合の量(' + editRuns.length + ' か所)', '「このファイルの変更は、まとめて 1 回で行って」と頼みます。',
+       editRuns.slice(0, 3).map(function (r) { return { call: r.first, label: clip(r.path, 40) + ' を ' + r.n + ' 回続けて編集', value: '2 回目以降の送信 ' + compact(r.extra) + ' トークン' }; }));
+    function outFam(id, title, fn, frac, tip) {
+      var sel = M.filter(fn), tot = 0; sel.forEach(function (m) { tot += m.call.out; });
+      sel.sort(function (a, b) { return b.call.out - a.call.out; });
+      vp(id, '返答の長さ', title, tot * frac, '該当する返答(' + sel.length + ' 回)の ' + Math.round(frac * 100) + '% が短くなった場合の量', tip, sel.slice(0, 3).map(function (m) { return { call: m.idx, label: m.tools.length ? m.tools.map(toolJa).join('、') : '文章だけの返答', value: '返答 ' + compact(m.call.out) + ' トークン' }; }));
+    }
+    outFam('out-text', '文章だけの長い返答', function (m) { return !m.tools.length && m.call.out >= 1500; }, .3, '「結論を 5 行で」のように、長さを指定します。');
+    var lastOf = {}; M.forEach(function (m) { lastOf[m.task] = m.idx; });
+    outFam('out-final', '依頼の最後の報告が長い', function (m) { return lastOf[m.task] === m.idx && m.call.out >= 1000; }, .3, '「変更点だけ 3 行で報告して」と頼みます。');
+    outFam('out-chatter', '編集のたびに長い説明がある', function (m) { return m.tools.some(function (nm) { return nm === 'Edit' || nm === 'Write' || nm === 'MultiEdit'; }) && m.call.out >= 800; }, .3, '「説明は不要です。編集だけ行って」と伝えます。');
+    outFam('out-write', '大きなファイルを一度に書いている', function (m) { return m.tools.indexOf('Write') >= 0 && m.call.out >= 3000; }, .4, 'ファイルを分けて作る、差分だけを書く、と頼みます。');
+
+    // ---- context length (6) and waiting (5)
+    vp('ctx-compact', '会話の長さ', '会話が長くなってから、要約している', whatif && whatif.best ? Math.max(0, whatif.best.saving) : 0, '会話が ' + (whatif && whatif.best ? compact(whatif.best.T) : '') + ' に達するたびに要約した場合の量(40k〜150k の案のうち、効果が最大のもの)', '区切りで /compact を実行します。会話が ' + (whatif && whatif.best ? compact(whatif.best.T) : '') + ' を超える前を目安にします。', []);
+    VP[VP.length - 1].detail = 'compact';
+    var idleB = function (lo, hi) { return M.filter(function (m) { return m.brk && m.brk.kind === 'idle' && m.brk.gapMin !== null && m.brk.gapMin >= lo && m.brk.gapMin < hi; }); };
+    [[5, 10, '5〜10 分'], [10, 30, '10〜30 分'], [30, 1e9, '30 分以上']].forEach(function (b) {
+      var sel = idleB(b[0], b[1]), tot = sel.reduce(function (a, m) { return a + m.brk.lost; }, 0);
+      vp('idle-' + b[0], '待ち時間と使い回し', b[2] + ' 離れたあとに再開している', tot, '使い回しを除いた数え方で減る量です(' + sel.length + ' 回)。送ったトークンの合計は変わりません。', '席を離れる前に区切るか、再開前に /compact で要約します。',
+         sel.slice(0, 3).map(function (m) { return { call: m.idx, label: Math.round(m.brk.gapMin) + ' 分離れていたあと', value: '送り直し ' + compact(m.brk.lost) + ' トークン' }; }));
+    });
+    var preB = M.filter(function (m) { return m.brk && m.brk.kind === 'prefix'; });
+    vp('prefix', '待ち時間と使い回し', '作業の途中で、設定や指示書を変えている', preB.reduce(function (a, m) { return a + m.brk.lost; }, 0), '使い回しを除いた数え方で減る量です(' + preB.length + ' 回)', '設定の変更は、依頼の切れ目でまとめて行います。', preB.slice(0, 3).map(function (m) { return { call: m.idx, label: '会話の先頭が変わったらしい(推定)', value: '送り直し ' + compact(m.brk.lost) + ' トークン' }; }));
+    var snaps = new Set(), pcRows = [], pcSave = 0, anySeen = new Set(), snap = null, snapAt = -99;
+    M.forEach(function (m, i5) {
+      if (m.comp) { snap = new Set(anySeen); snapAt = i5; }
+      m.call.uses.forEach(function (u) {
+        if (!DEDUP[u.name] || !u.key) return;
+        var k5 = u.name + '|' + u.key;
+        if (snap && i5 - snapAt >= 0 && i5 - snapAt <= 5 && snap.has(k5)) {
+          var ev = (evBySrc.get(m.idx) || []).filter(function (e) { return e.name === u.name && e.key === u.key; })[0];
+          if (ev) { pcSave += ev.carry; pcRows.push({ call: m.idx, label: toolJa(u.name) + ' ' + clip(u.key, 44), value: '残った分 ' + compact(ev.carry) + ' トークン' }); }
+        }
+        anySeen.add(k5);
+      });
+    });
+    vp('postcomp', '会話の長さ', '要約の直後に、同じものを読み直している', pcSave, '要約の直後 5 回以内の再読み込みが、すべて不要だった場合の量(' + pcRows.length + ' 件)', '要約には、あとで使う情報(ファイル名、決まったこと)を残すよう指定します(/compact に指示を付けます)。', pcRows.slice(0, 3));
+
+    // ---- wording of the requests (9)
+    taskFam('p-vague', 'あいまいな言葉で頼んでいる', function (t) { return /いい感じ|適当に|なんとか|よしなに|うまく|ちゃんと|それっぽく|良さそうに/.test(t.text || ''); }, .15, '「何ができれば完成か」を書きます。');
+    taskFam('p-broad', '「全部」「全体」と広く頼んでいる', function (t) { return BROADRE.test(t.text || ''); }, .15, '対象のファイルやフォルダを絞ります。');
+    taskFam('p-verbose', '「詳しく」「徹底的に」と頼んでいる', function (t) { return /詳しく|詳細に|徹底|網羅|丁寧に|くわしく|thorough|in detail|comprehensive/i.test(t.text || ''); }, .1, '返答の長さを指定します(「結論を 5 行で」)。');
+    taskFam('p-multi', '1 つの依頼に、複数の目的を詰め込んでいる', function (t) { return ((t.text || '').match(/(^|\s)(\d+[.)）]|[・\-*●])\s*/g) || []).length >= 3 || /①|②|③/.test(t.text || ''); }, .15, '目的ごとに、依頼を分けます。');
+    taskFam('p-long', '長い文章の依頼', function (t) { return (t.len || 0) >= 1500; }, .1, '要点を絞ります。資料はパスで伝えます。');
+    taskFam('p-bug', '原因の手がかりなしで、「直して」と頼んでいる', function (t) { return /バグ|不具合|直して|修正して|\bfix\b|\bbug\b/i.test(t.text || '') && !/エラー|例外|error|exception|stack|failed|失敗|:\d+|Traceback|TypeError|undefined/i.test(t.text || ''); }, .15, 'エラーメッセージ、再現手順、怪しい場所を書きます。');
+    taskFam('p-refactor', '「整理して」「最適化して」と広く頼んでいる', function (t) { return /リファクタ|最適化|整理して|きれいに|書き直|refactor|clean ?up|optimi[sz]e|rewrite/i.test(t.text || ''); }, .1, '対象と、変えたい点を具体的に書きます。');
+    taskFam('p-doc', 'ドキュメントや報告書の作成を頼んでいる', function (t) { return /README|ドキュメント|仕様書|説明書|解説|レポート|document/i.test(t.text || ''); }, .1, '長さと構成(見出し数、文字数)を指定します。');
+    taskFam('p-image', '画像を添付している', function (t) { return !!t.img; }, .1, '必要な部分だけを切り取って渡します。');
+
+    // ---- subagents (4) and structure (3), config (1)
+    var subByP = new Map(), subRuns = 0;
+    P.calls.forEach(function (c3) { if (c3.side && c3.parent) subByP.set(c3.parent, (subByP.get(c3.parent) || 0) + c3.in + c3.cw + c3.cr + c3.out); });
+    var subTot = 0; subByP.forEach(function (v) { subTot += v; });
+    var smallSub = Array.from(subByP.values()).filter(function (v) { return v < 30000; });
+    vp('sub-big', 'サブエージェント', 'サブエージェントの報告が大きい', evPick(function (e) { return (e.name === 'Task' || e.name === 'Agent') && e.size >= 8000; }).carry * 0.7, '8k 以上の報告が、2k に収まった場合の量', '「結論を 5 行で報告して」のように、報告の長さを指定します。', evPick(function (e) { return (e.name === 'Task' || e.name === 'Agent') && e.size >= 8000; }).rows);
+    vp('sub-share', 'サブエージェント', 'サブエージェントの消費が大きい', side && processed ? (subTot / processed >= 0.25 ? subTot * 0.2 : 0) : 0, '任せた側の消費の 2 割が減る場合の量(全体の 25% 以上のときだけ)', '調べる範囲を狭めて、報告を短くします。', []);
+    vp('sub-small', 'サブエージェント', '小さな確認にサブエージェントを使っている', smallSub.reduce(function (a, v) { return a + v; }, 0) * 0.5, '30k 未満の小さな調べもの(' + smallSub.length + ' 回)を、直接行った場合の半分が減る量', '1〜2 回で終わる確認は、メインで直接頼みます。', []);
+    vp('sub-model', 'サブエージェント', 'サブエージェントに重いモデルを使っている', 0, 'トークンの数は変わらず、利用制限の減り方が変わります', '調べものには、軽いモデルを使います。', [], true);
+    var longT = tasks.filter(function (t) { return t.mainCalls >= 30; }), longTot = longT.reduce(function (a, t) { return a + t.total; }, 0);
+    vp('long-task', '進め方', '1 つの依頼が、とても長く続いている', longTot * 0.15, '30 回以上のやり取りを続けた依頼(' + longT.length + ' 件)を、途中で区切った場合の 15% が減る量', '30 回を目安に、途中で /compact するか、新しい会話にします。', longT.slice(0, 3).map(function (t) { return { call: t.first, label: '依頼 #' + t.id + '「' + clip(t.text || t.title, 30) + '」', value: 'やり取り ' + t.mainCalls + ' 回 · ' + compact(t.total) + ' トークン' }; }));
+    var quick = tasks.filter(function (t) { return t.first && t.mainCalls <= 2 && t.first > 1 && M[t.first - 1].ctx >= 50000; }), quickTot = 0;
+    quick.forEach(function (t) { M.forEach(function (m) { if (m.task === t.id) quickTot += m.ctx; }); });
+    vp('quick', '進め方', '短い質問を、長い会話の中でしている', quickTot * 0.5, '会話が 50k 以上のときの、2 回以内の依頼(' + quick.length + ' 件)を、新しい会話で聞いた場合の半分が減る量', '一言だけ聞くときは、新しい会話で聞きます。', quick.slice(0, 3).map(function (t) { return { call: t.first, label: '依頼 #' + t.id + '「' + clip(t.text || t.title, 30) + '」', value: '会話の長さ ' + compact(M[t.first - 1].ctx) }; }));
+    var mcpUsed = M.some(function (m) { return m.tools.some(function (nm) { return /^mcp__/.test(nm); }); });
+    vp('mcp-idle', '設定と環境', '使っていない外部ツール(MCP)が土台に入っている可能性', (!mcpUsed && baseCtx >= 12000) ? baseCtx * N * 0.15 : 0, 'MCP ツールを一度も使っておらず、土台の 15% が MCP だと仮定した場合の量です。接続していなければ、該当しません。', '/mcp で接続を確認して、使わないサーバーを外します。', []);
+
+    /* ================= bulk catalogue (data-driven families, generated from word lists) ================= */
+    var esc = function (s) { return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); };
+    var CMDG = [
+      ['バージョン管理', .6, '履歴や差分は件数・範囲を絞り、概要から見ます。', 'git hg svn fossil jj tig'],
+      ['JavaScript の道具', .7, '--silent や末尾だけの表示を頼みます。', 'npm npx yarn pnpm bun deno node nvm fnm volta corepack turbo nx lerna'],
+      ['Python の道具', .7, '-q を付ける、または末尾だけ見ます。', 'python python3 pip pip3 pipx poetry uv conda mamba pyenv virtualenv tox nox pytest coverage black isort mypy ruff flake8 pylint bandit'],
+      ['Ruby / PHP / Perl など', .65, '静かに実行するオプションを付けます。', 'ruby gem bundle rake rails rspec rubocop php composer artisan perl cpan lua luarocks Rscript julia'],
+      ['Java / JVM の道具', .7, 'エラーの行だけ表示するよう頼みます。', 'java javac mvn gradle gradlew sbt kotlinc scala lein'],
+      ['Go / Rust / .NET / モバイル', .65, 'エラーだけを表示するよう頼みます。', 'go gofmt cargo rustc rustup dotnet nuget swift swiftc xcodebuild pod carthage zig nim dart flutter elixir mix erl rebar3 ghc cabal stack ocaml dune opam'],
+      ['C / C++ のビルド', .65, 'エラーと警告だけ見ます(2>&1 | tail -30 など)。', 'gcc g++ clang make cmake ninja bazel meson ctest valgrind gdb lldb'],
+      ['コンテナ・クラウド', .6, '出力の形式や項目を絞ります(--tail、-o name、--query など)。', 'docker docker-compose podman kubectl helm kustomize minikube kind terraform tofu ansible ansible-playbook vagrant packer pulumi aws gcloud az gsutil bq heroku fly vercel netlify wrangler firebase supabase serverless sam cdk'],
+      ['ネットワーク', .6, '-s を付け、先頭だけ見ます(| head)。', 'curl wget http httpie ssh scp rsync ping traceroute dig nslookup nc nmap openssl telnet ftp sftp'],
+      ['ファイルと文字列の処理', .55, '必要な行・件数だけに絞ります(| head、-m、-l)。', 'ls tree find fd locate cat bat less more head tail grep rg ag ack sed awk cut sort uniq wc diff cmp tr tee xargs jq yq xmllint column paste join comm file stat du df lsblk mount'],
+      ['圧縮・展開', .7, '展開の一覧は出さない(-q)ようにします。', 'tar zip unzip gzip gunzip bzip2 xz 7z'],
+      ['システム情報', .65, '必要な項目だけ絞って見ます。', 'ps top htop kill pkill pgrep lsof netstat ss systemctl journalctl service dmesg uname env printenv which whereis whoami id uptime free vmstat iostat crontab'],
+      ['データベース', .6, 'LIMIT を付けるなど、件数を絞ります。', 'psql mysql sqlite3 mongosh mongo redis-cli pg_dump mysqldump clickhouse-client'],
+      ['フロントエンドの道具', .65, 'エラーの行だけ表示するよう頼みます。', 'eslint prettier tsc webpack vite rollup esbuild parcel babel jest vitest mocha cypress playwright puppeteer storybook next nuxt astro ng expo tailwindcss sass postcss stylelint'],
+      ['その他の道具', .5, '出力を末尾だけにするよう頼みます。', 'gh glab jira just task watch time timeout sleep echo printf date open code vim nano emacs']
+    ];
+    CMDG.forEach(function (g) {
+      g[3].split(' ').forEach(function (c) {
+        var re = new RegExp('(^|[\\s;&|(`])' + esc(c) + '(\\s|$)');
+        famEv('c1-' + c, 'コマンドの出力', '「' + c + '」の出力が会話に残っている(' + g[0] + ')', isB(re), g[1], g[2]);
+      });
+    });
+    var SUBS = [
+      ['git', 'status diff log show blame branch checkout switch merge rebase stash cherry-pick reset restore add commit push pull fetch clone remote tag bisect reflog shortlog grep ls-files rev-parse describe config worktree submodule clean gc'],
+      ['npm', 'install ci test run start build ls outdated audit update publish pack link init exec view search cache config'],
+      ['yarn', 'install add remove test build start upgrade why list audit'],
+      ['pnpm', 'install add remove test build run list outdated audit why'],
+      ['docker', 'build run ps logs exec images pull push compose inspect stats network volume system prune rm rmi stop start'],
+      ['kubectl', 'get describe logs apply delete exec top rollout config port-forward cp events explain api-resources'],
+      ['aws', 's3 ec2 iam lambda logs cloudformation dynamodb sts ecs eks rds sqs sns cloudwatch route53 ssm secretsmanager'],
+      ['gcloud', 'compute container run functions logging projects iam sql storage auth config'],
+      ['cargo', 'build test run check clippy fmt doc bench tree update add'],
+      ['go', 'build test run vet fmt mod get generate list'],
+      ['pip', 'install list freeze show uninstall download check'],
+      ['terraform', 'plan apply init validate fmt show state output destroy'],
+      ['gh', 'pr issue run repo api workflow release search gist'],
+      ['brew', 'install update upgrade list info search outdated'],
+      ['apt', 'install update upgrade list search show remove'],
+      ['systemctl', 'status start stop restart enable list-units']
+    ];
+    SUBS.forEach(function (g) {
+      g[1].split(' ').forEach(function (s) {
+        var re = new RegExp('(^|[\\s;&|(`])' + esc(g[0]) + '\\s+(-\\S+\\s+)*' + esc(s) + '(\\s|$)');
+        famEv('c2-' + g[0] + '-' + s, 'コマンドの出力', '「' + g[0] + ' ' + s + '」の出力が会話に残っている', isB(re), .6, '出力を絞るオプションを付けるか、「最後の 20 行だけ」と頼みます。');
+      });
+    });
+    'js jsx ts tsx mjs cjs vue svelte astro html htm css scss sass less styl py pyi ipynb rb erb rs go java kt kts scala groovy swift m mm c h cc cpp cxx hpp cs fs vb php pl pm lua r jl dart ex exs erl hs ml clj cljs sh bash zsh fish ps1 bat sql graphql gql proto thrift json json5 jsonc yaml yml toml ini cfg conf env properties xml xsd xsl csv tsv md mdx rst txt tex adoc org rtf tf tfvars hcl dockerfile gradle cmake mk lock log out err tmp bak orig patch diff svg png jpg jpeg gif webp ico pdf doc docx xls xlsx ppt pptx zip tar gz wasm so dll exe bin hex map min'.split(' ').forEach(function (x) {
+      famEv('x-' + x, 'ファイルの読み込み', '.' + x + ' ファイルの読み込みが会話に残っている', isR(new RegExp('\\.' + esc(x) + '$', 'i')), .3, '必要な範囲だけを読みます(行の範囲、関数名で指定)。不要なら読まないよう指示します。');
+    });
+    'README CHANGELOG LICENSE CONTRIBUTING CODE_OF_CONDUCT SECURITY AUTHORS NOTICE TODO ROADMAP package.json tsconfig.json jsconfig.json webpack.config vite.config rollup.config babel.config jest.config eslint.config .eslintrc .prettierrc .babelrc .gitignore .gitattributes .editorconfig .env .env.example Dockerfile docker-compose Makefile Rakefile Gemfile Pipfile pyproject.toml setup.py setup.cfg requirements.txt tox.ini pytest.ini Cargo.toml go.mod pom.xml build.gradle settings.gradle CMakeLists.txt Procfile vercel.json netlify.toml serverless.yml main.tf variables.tf schema.prisma schema.graphql openapi swagger CLAUDE.md AGENTS.md .github .gitlab-ci.yml Jenkinsfile index main app server config settings constants types utils helpers routes router store reducer schema models migrations seeds fixtures mock'.split(' ').forEach(function (x) {
+      famEv('f-' + x, 'ファイルの読み込み', '「' + x + '」を読んでいる', isR(new RegExp('(^|/)' + esc(x) + '[^/]*$', 'i')), .3, '何度も読む必要がないよう、必要な情報だけ CLAUDE.md にまとめます。範囲指定でも読めます。');
+    });
+    'src source lib libs app apps pkg packages internal cmd core api server client web frontend backend components pages views layouts routes controllers services models utils helpers hooks store state assets static public styles css images i18n locales lang config configs settings scripts tools bin test tests spec specs __tests__ e2e integration unit fixtures mocks docs doc examples samples migrations db database schema proto generated vendor third_party external node_modules dist build out target coverage tmp cache logs'.split(' ').forEach(function (x) {
+      famEv('d-' + x, 'ファイルの読み込み', 'フォルダ「' + x + '/」配下を読んでいる', isR(new RegExp('(^|/)' + esc(x) + '/')), .3, 'フォルダ全体ではなく、必要なファイルを名指しで読みます。');
+    });
+    var TOOLG = [['Read', function (e) { return e.name === 'Read'; }], ['Bash', function (e) { return e.name === 'Bash'; }], ['Grep', function (e) { return e.name === 'Grep'; }], ['Glob', function (e) { return e.name === 'Glob'; }], ['WebFetch', function (e) { return e.name === 'WebFetch'; }], ['WebSearch', function (e) { return e.name === 'WebSearch'; }], ['Edit', function (e) { return e.name === 'Edit' || e.name === 'MultiEdit'; }], ['Write', function (e) { return e.name === 'Write'; }], ['Task', function (e) { return e.name === 'Task' || e.name === 'Agent'; }], ['TodoWrite', function (e) { return e.name === 'TodoWrite'; }], ['NotebookEdit', function (e) { return e.name === 'NotebookEdit'; }], ['MCP', function (e) { return /^mcp__/.test(e.name); }]];
+    TOOLG.forEach(function (g) {
+      [2000, 3000, 5000, 8000, 10000, 15000, 20000, 30000, 40000, 60000, 80000].forEach(function (th) {
+        famEv('sz-' + g[0] + '-' + th, 'ツールの使い方', toolJa(g[0] === 'MCP' ? 'mcp__x' : g[0]) + ' の結果が 1 回で ' + compact(th) + ' 以上ある', function (e) { return g[1](e) && e.size >= th; }, Math.min(.6, .25 + th / 100000), '出力を絞る、範囲を指定する、と頼みます。');
+      });
+    });
+    var errSet = P.errIds || new Set();
+    TOOLG.forEach(function (g) {
+      famEv('er-' + g[0], 'ツールの使い方', toolJa(g[0] === 'MCP' ? 'mcp__x' : g[0]) + ' が失敗した結果が残っている', function (e) { return g[1](e) && e.id && errSet.has(e.id); }, .8, '失敗の結果も会話に残ります。同じ失敗をくり返さないよう、原因を伝えてから再実行します。');
+    });
+    for (var tb = 40000; tb <= 190000; tb += 10000) (function (T0) {
+      var ex = 0, rr = [];
+      M.forEach(function (m) { if (m.ctx > T0) { ex += m.ctx - T0; rr.push(m); } });
+      rr.sort(function (a, b) { return b.ctx - a.ctx; });
+      vp('band-' + T0, '会話の長さ', '会話が ' + compact(T0) + ' を超えたまま続けている', ex * 0.2, '会話が ' + compact(T0) + ' を超えた分(' + rr.length + ' 回)の 20% が、要約で減る場合の量', '会話が ' + compact(T0) + ' に近づいたら /compact で要約します。', rr.slice(0, 3).map(function (m) { return { call: m.idx, label: '会話の長さ ' + compact(m.ctx), value: '超えた分 ' + compact(m.ctx - T0) }; }));
+    })(tb);
+    [5, 6, 7, 8, 9, 10, 12, 15, 20, 25, 30, 40, 45, 60, 90, 120, 180, 240].forEach(function (g) {
+      var sel = M.filter(function (m) { return m.brk && m.brk.kind === 'idle' && m.brk.gapMin !== null && m.brk.gapMin >= g; }), tot = sel.reduce(function (a, m) { return a + m.brk.lost; }, 0);
+      vp('gap-' + g, '待ち時間と使い回し', g + ' 分以上離れたあとに再開している', tot, '使い回しを除いた数え方で減る量です(' + sel.length + ' 回)', '席を離れる前に区切るか、再開前に /compact で要約します。', sel.slice(0, 3).map(function (m) { return { call: m.idx, label: Math.round(m.brk.gapMin) + ' 分離れていたあと', value: '送り直し ' + compact(m.brk.lost) + ' トークン' }; }));
+    });
+    var PW = [
+      ['あいまいな言葉', .15, '「何ができれば完成か」を書きます。', 'いい感じ 適当 なんとか よしなに うまく ちゃんと それっぽく 良さそう なるべく できるだけ とりあえず 何か なんか いろいろ 色々 たぶん 多分 みたいな ざっくり ふんわり 雰囲気 イメージ 好きに お任せ 自由に 最適 まともに きれいに 綺麗に 見やすく わかりやすく'],
+      ['広すぎる範囲', .15, '対象のファイルやフォルダを絞ります。', '全部 全体 すべて 全て 全ファイル 全体的に プロジェクト全体 リポジトリ全体 コードベース全体 隅々 洗い出し 網羅 一通り 一式 まるごと 丸ごと 全件 everything entire whole'],
+      ['長さを求める言葉', .1, '返答の長さを指定します(「結論を 5 行で」)。', '詳しく 詳細 徹底 丁寧 くわしく 深く 掘り下げ 包括 解説して 説明して 理由も 背景も 根拠も 比較して thorough detailed comprehensive explain elaborate in-depth'],
+      ['やり直しの言葉', .2, '1 回目で通じるよう、条件と例を最初に書きます。', 'もう一度 もう1回 もう一回 やり直 最初から 元に戻 戻して そうじゃなく 違います 間違 ちがう やっぱり 再度 再実行 リトライ 再試行 again redo retry revert undo wrong'],
+      ['調べものの言葉', .1, '調べる範囲と、欲しい結論の形を書きます。', '確認して 調べて 見て チェック 点検 レビュー 調査 探して 検索して 把握 理解して 読んで 読み込んで 分析 解析 診断 検証 explore investigate review audit analyze understand'],
+      ['作成・変換の言葉', .12, '分量・形式・出力先を指定します。', '作って 生成 実装して 追加して 書いて 作成 構築 開発して 新規 マイグレーション 変換 翻訳 リライト 書き換え implement generate create build migrate convert translate'],
+      ['あいさつ・お礼', .03, '依頼は要件だけに絞っても伝わります。', 'お願いします ありがとう すみません よろしく 感謝 ごめん 申し訳 thanks please sorry'],
+      ['質問・相談の言葉', .08, '知りたい結論の形(○か×か、3 案、など)を書きます。', '教えて どうすれば どうして なぜ 理由 どれ どこ どう思 意見 提案して 案を 選択肢 メリット デメリット'],
+      ['追加の頼みごと', .12, '追加の頼みは、別の依頼に分けます。', 'ついでに 他にも ほかにも それと 追加で さらに 併せて 同時に 並行して 一緒に'],
+      ['前の話を指す言葉', .08, '指す対象(ファイル名、決定事項)を具体的に書きます。', 'さっき 先ほど 前に 上記 上の 先の 前述 前回 続き 続けて 続行 引き続き'],
+      ['コード整理の言葉', .1, '対象と、変えたい点を具体的に書きます。', 'リファクタ 最適化 整理 命名 コメント フォーマット 非推奨 古い modern cleanup']
+    ];
+    PW.forEach(function (g) {
+      g[3].split(' ').forEach(function (w) {
+        var re = new RegExp(esc(w), 'i');
+        taskFam('pw-' + w, '「' + w + '」という言葉で頼んでいる(' + g[0] + ')', function (t) { return re.test(t.text || ''); }, g[1], g[2]);
+      });
+    });
+    var outOf = function (t) { var s = 0; M.forEach(function (m) { if (m.task === t.id) s += m.call.out; }); return s; };
+    var tOut = {}; tasks.forEach(function (t) { tOut[t.id] = outOf(t); });
+    [100e3, 200e3, 300e3, 500e3, 750e3, 1e6, 1.5e6, 2e6, 3e6, 5e6].forEach(function (th) { taskFam('tk-total-' + th, compact(th) + ' トークン以上使った依頼', function (t) { return t.total >= th; }, .12, '大きな依頼は、途中で区切るか、分けて頼みます。'); });
+    [10, 15, 20, 30, 40, 50, 75, 100, 150, 200].forEach(function (n) { taskFam('tk-calls-' + n, '1 つの依頼で ' + n + ' 回以上やり取りしている', function (t) { return t.mainCalls >= n; }, .12, '途中で /compact するか、新しい会話にします。'); });
+    [100, 300, 500, 800, 1000, 1500, 2000, 3000, 5000, 8000].forEach(function (n) { taskFam('tk-len-' + n, '依頼の文章が ' + n + ' 文字以上ある', function (t) { return (t.len || 0) >= n; }, .08, '要点を絞り、資料はパスで伝えます。'); });
+    [5e3, 10e3, 20e3, 40e3, 80e3].forEach(function (n) { taskFam('tk-out-' + n, '返答だけで ' + compact(n) + ' 以上になった依頼', function (t) { return tOut[t.id] >= n; }, .15, '返答の長さを指定します。'); });
+    var tCnt = {}, tCar = {};
+    M.forEach(function (m) { m.call.uses.forEach(function (u) { var k = m.task + '|' + u.name; tCnt[k] = (tCnt[k] || 0) + 1; }); });
+    events.forEach(function (e) { var mm = M[e.src - 1]; if (mm) { var k = mm.task + '|' + e.name; tCar[k] = (tCar[k] || 0) + e.carry; } });
+    ['Read', 'Bash', 'Grep', 'Glob', 'Edit', 'Task', 'WebFetch', 'Write'].forEach(function (nm) {
+      [5, 10, 20, 30, 50, 100].forEach(function (n) {
+        var tot = 0, sel = [];
+        tasks.forEach(function (t) { var k = t.id + '|' + nm; if ((tCnt[k] || 0) >= n) { tot += tCar[k] || 0; sel.push(t); } });
+        vp('tt-' + nm + '-' + n, '進め方', '1 つの依頼で ' + toolJa(nm) + ' を ' + n + ' 回以上使っている', tot * 0.2, '該当する依頼(' + sel.length + ' 件)で、その結果が会話に残った分の 20% が減る場合の量', '同じ種類の作業が続くときは、まとめて頼むか、サブエージェントに任せます。', sel.slice(0, 3).map(function (t) { return { call: t.first, label: '依頼 #' + t.id + '「' + clip(t.text || t.title, 30) + '」', value: toolJa(nm) + ' ' + tCnt[t.id + '|' + nm] + ' 回' }; }));
+      });
+    });
+    [300, 500, 800, 1000, 1500, 2000, 3000, 5000].forEach(function (n) {
+      outFam('o-any-' + n, '1 回の返答が ' + compact(n) + ' 以上ある', function (m) { return m.call.out >= n; }, .25, '長さを指定します。');
+      outFam('o-txt-' + n, '文章だけの返答が ' + compact(n) + ' 以上ある', function (m) { return !m.tools.length && m.call.out >= n; }, .25, '「結論を 5 行で」のように、長さを指定します。');
+      outFam('o-edit-' + n, '編集のたびの説明が ' + compact(n) + ' 以上ある', function (m) { return m.tools.some(function (nm) { return nm === 'Edit' || nm === 'Write' || nm === 'MultiEdit'; }) && m.call.out >= n; }, .25, '「説明は不要です」と伝えます。');
+      outFam('o-tool-' + n, 'ツールを呼ぶ前の前置きが ' + compact(n) + ' 以上ある', function (m) { return m.tools.length > 0 && !m.tools.some(function (nm) { return nm === 'Edit' || nm === 'Write' || nm === 'MultiEdit'; }) && m.call.out >= n; }, .25, '「途中経過は書かなくてよい」と伝えます。');
+      outFam('o-fin-' + n, '依頼の最後の報告が ' + compact(n) + ' 以上ある', function (m) { return lastOf[m.task] === m.idx && m.call.out >= n; }, .3, '「変更点だけ 3 行で」と頼みます。');
+    });
+    // data-driven: every tool name, MCP server and the biggest files seen in this log
+    var seenTools = {}, seenMcp = {}, byPath = {};
+    events.forEach(function (e) {
+      seenTools[e.name] = 1;
+      var mm = /^mcp__([^_]+(?:_[^_]+)*?)__/.exec(e.name); if (mm) seenMcp[mm[1]] = 1;
+      if (e.name === 'Read' && e.path) { var b = byPath[e.path] || (byPath[e.path] = { carry: 0, n: 0 }); b.carry += e.carry; b.n++; }
+    });
+    Object.keys(seenTools).slice(0, 60).forEach(function (nm) { famEv('dt-' + nm, 'ツールの使い方', '「' + toolJa(nm) + '」の結果が会話に残っている', function (e) { return e.name === nm; }, .25, '必要な部分だけを返すように頼みます。'); });
+    Object.keys(seenMcp).slice(0, 40).forEach(function (sv) { famEv('ds-' + sv, '設定と環境', '外部ツール(MCP)「' + clip(sv, 30) + '」の結果が積まれている', function (e) { return e.name.indexOf('mcp__' + sv + '__') === 0; }, .4, '必要な項目だけ返す呼び方にするか、使わない接続を外します。'); });
+    Object.keys(byPath).sort(function (a, b) { return byPath[b].carry - byPath[a].carry; }).slice(0, 60).forEach(function (pth) {
+      famEv('dp-' + pth, 'ファイルの読み込み', clip(pth, 50) + ' を読んでいる(' + byPath[pth].n + ' 回)', function (e) { return e.name === 'Read' && e.path === pth; }, .4, '読む範囲を絞る、または必要な情報を CLAUDE.md にまとめます。');
+    });
+    var mfam = {};
+    M.forEach(function (m) { var f2 = /opus/i.test(m.call.model) ? 'Opus' : /sonnet/i.test(m.call.model) ? 'Sonnet' : /haiku/i.test(m.call.model) ? 'Haiku' : /fable|mythos/i.test(m.call.model) ? 'Fable / Mythos' : ''; if (f2) mfam[f2] = (mfam[f2] || 0) + 1; });
+    ['Opus', 'Sonnet', 'Haiku', 'Fable / Mythos'].forEach(function (f2) {
+      vp('mdl-' + f2, '設定と環境', f2 + ' で動かした分がある(' + (mfam[f2] || 0) + ' 回)', 0, 'トークン数は変わらず、利用制限の減り方が変わります', '調べものや簡単な修正は、軽いモデルに切り替えます(/model)。', [], true);
+      VP[VP.length - 1].hit = !!mfam[f2];
+    });
+
+
+    // ---- the detailed cards above, as ranking entries
+    var CARD = [['carry', '会話の長さ'], ['big', 'ツールの使い方'], ['dup', 'ツールの使い方'], ['paste', '指示の出し方'], ['base', '設定と環境'], ['cache', '待ち時間と使い回し'], ['errors', 'ツールの使い方'], ['rerun', 'コマンドの出力'], ['batch', '指示の出し方'], ['rewrite', '返答の長さ'], ['scope', '指示の出し方'], ['redo', '指示の出し方'], ['delegate', 'サブエージェント']];
+    var oppById = {}; opps.concat(refs).forEach(function (o) { oppById[o.id] = o; });
+    CARD.forEach(function (cc) { var o = oppById[cc[0]]; vp('card-' + cc[0], cc[1], o ? o.title : cc[0], o && o.saving ? o.saving : 0, '上の詳しい項目と同じ見積もりです', o ? o.tip : '', o && o.rows ? o.rows.slice(0, 3) : []); VP[VP.length - 1].detail = o ? cc[0] : null; });
+    [['model', '設定と環境', '重いモデルの利用が多い', '調べものや簡単な修正は、軽いモデルに切り替えます(/model)。'], ['repeat', '指示の出し方', '毎回同じ指示を書いている', 'CLAUDE.md に一度だけ書きます。'], ['out', '返答の長さ', 'Claude の返答が長いやり取りがある', '長さを指定します。'], ['sub', 'サブエージェント', 'サブエージェントのトークン消費', '調べる範囲と報告の長さを指定します。']].forEach(function (u) {
+      var o = oppById[u[0]]; vp('card-' + u[0], u[1], u[2], 0, 'トークン数が変わらない、または量を出せない項目です', u[3], [], true); VP[VP.length - 1].detail = o ? u[0] : null; VP[VP.length - 1].hit = !!o;
+    });
+
+    var thr = processed * 0.001;
+    var rankAll = VP.slice().sort(function (a, b) { return b.saving - a.saving; });
+    var rankHit = rankAll.filter(function (v) { return v.saving >= thr && !v.unq; });
+    var rankUnq = VP.filter(function (v) { return v.unq && v.hit; });
+    var rankMiss = rankAll.filter(function (v) { return v.saving < thr && !v.unq; });
+    var ranking = { total: VP.length, hit: rankHit, unq: rankUnq, miss: rankMiss };
+
+    return { ranking: ranking, tasks: tasks, main: M, tools: tools, totals: totals, peak: peak, comps: comps, findings: F, win: win, growTotal: growTotal,
+      opps: opps, events: events, carryTotal: carryTotal, breaks: breaks, whatif: whatif, sim: sim, mainTokens: mainTokens,
+      timed: timed, t0: t0, t1: t1, gaps: gaps };
+  }
+
+  /* ---------- synthetic sample ---------- */
+  function mulberry32(a) {
+    return function () {
+      a |= 0; a = a + 0x6D2B79F5 | 0;
+      var t = Math.imul(a ^ a >>> 15, 1 | a);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+
+  function makeSample() {
+    var rnd = mulberry32(20261011);
+    var rnd2 = mulberry32(99); // timestamps and tool arguments, kept apart so the main sequence stays stable
+    var rr = function (a, b) { return a + (b - a) * rnd(); };
+    var ri = function (a, b) { return Math.round(rr(a, b)); };
+    var pick = function (obj) {
+      var ks = Object.keys(obj), tot = 0;
+      ks.forEach(function (k) { tot += obj[k]; });
+      var r = rnd() * tot;
+      for (var i = 0; i < ks.length; i++) { r -= obj[ks[i]]; if (r <= 0) return ks[i]; }
+      return ks[0];
+    };
+    var SIZE = { Read: [2500, 11000], Grep: [700, 3600], Glob: [250, 1100], Bash: [400, 7000], Edit: [250, 700], Write: [200, 500], Task: [2500, 6500] };
+    var TASKS = [
+      { t: '認証まわりの構成を調べて', n: 14, tools: { Read: 5, Grep: 4, Glob: 2, Bash: 1, Task: 1 },
+        args: { Read: ['src/auth/session.ts', 'src/auth/token.ts', 'src/middleware/guard.ts', 'src/auth/index.ts', 'docs/auth.md'], Grep: ['validateSession', 'TokenExpired'], Glob: ['src/**/*auth*'], Bash: ['git log --oneline -20'], Task: ['認証フローの調査'] } },
+      { t: 'ログイン失敗時のバグを直して', n: 12, tools: { Read: 4, Edit: 4, Bash: 3, Grep: 1 },
+        args: { Read: ['src/auth/session.ts', 'src/api/login.ts', 'src/auth/token.ts'], Edit: ['src/auth/session.ts', 'src/api/login.ts'], Bash: ['npm test -- auth'], Grep: ['TokenExpired'] } },
+      { t: 'そうじゃなくて、ログイン周りのテストを追加して', n: 13, tools: { Read: 3, Write: 3, Edit: 2, Bash: 5 },
+        args: { Read: ['src/api/login.ts', 'test/login.test.ts', 'src/auth/session.ts'], Write: ['test/login.test.ts', 'test/session.test.ts'], Edit: ['test/login.test.ts'], Bash: ['npm test -- login', 'npm test'] } },
+      { t: '依存ライブラリを最新にして', n: 9, tools: { Bash: 6, Read: 2, Edit: 1 }, bash: 2.4,
+        args: { Bash: ['npm outdated', 'npm install', 'npm test', 'npm audit'], Read: ['package.json', 'package-lock.json'], Edit: ['package.json'] } },
+      { t: 'README を書き直して', n: 8, tools: { Read: 4, Write: 2, Glob: 1, Edit: 1 },
+        args: { Read: ['README.md', 'docs/auth.md', 'package.json', 'src/index.ts'], Write: ['README.md', 'docs/setup.md'], Glob: ['docs/**/*.md'], Edit: ['README.md'] } },
+      { t: 'また落ちてる。違う、CI が落ちる原因をもう一度調べて', n: 12, tools: { Bash: 7, Read: 3, Grep: 2, Task: 1 }, bash: 2.4,
+        args: { Bash: ['gh run view --log-failed', 'npm run build', 'npm test', 'git diff main'], Read: ['.github/workflows/ci.yml', 'package.json', 'src/index.ts'], Grep: ['ERR!', 'Error:'], Task: ['ログの切り分け'] } },
+      { t: 'リファクタできそうな箇所を調べて', n: 10, tools: { Read: 6, Grep: 3 },
+        args: { Read: ['src/auth/session.ts', 'src/auth/token.ts', 'src/api/login.ts', 'src/middleware/guard.ts', 'src/index.ts', 'src/auth/index.ts'], Grep: ['export function', 'TODO'] } },
+      { t: 'リリースノートを作って', n: 6, tools: { Bash: 3, Read: 2, Write: 1 },
+        args: { Bash: ['git log --oneline v1.0..HEAD', 'git diff --stat v1.0', 'npm test'], Read: ['CHANGELOG.md', 'package.json'], Write: ['RELEASE_NOTES.md'] } }
+    ];
+    var BREAKS = { '1:5': 'idle', '4:3': 'idle', '5:6': 'prefix' };
+    var LIMIT = 165000;
+    var lines = [];
+    var emit = function (o) { lines.push(JSON.stringify(o)); };
+    var truth = { errors: 0, in: 0, cw: 0, cr: 0, out: 0, comp: 0, calls: 0, mainCalls: 0, tasks: TASKS.length, rawLines: 0, idle: 0, prefix: 0 };
+    var prevCtx = 0, carry = 0, mid = 0, tid = 0;
+    var clock = Date.UTC(2026, 9, 9, 1, 0, 0);
+    var stamp = function () { return new Date(clock).toISOString(); };
+    var argOf = function (T, tool) {
+      var pool = (T.args || {})[tool];
+      if (!pool) return {};
+      var v = pool[Math.floor(rnd2() * pool.length)];
+      if (tool === 'Read' || tool === 'Edit' || tool === 'Write') return { file_path: v };
+      if (tool === 'Grep' || tool === 'Glob') return { pattern: v };
+      if (tool === 'Bash') return { command: v };
+      if (tool === 'Task') return { description: v };
+      return {};
+    };
+
+    TASKS.forEach(function (T, ti) {
+      clock += Math.round((20 + rnd2() * 100) * 1000);
+      emit({ type: 'user', timestamp: stamp(), message: { role: 'user', content: T.t }, uuid: 'u' + ti });
+      carry += ri(40, 260);
+      if (ti === 6) carry += 14000;
+      for (var k = 0; k < T.n; k++) {
+        var last = k === T.n - 1;
+        clock += Math.round((8 + rnd2() * 37) * 1000);
+        var cin = ri(2, 9), cw, cr, c;
+        var brk = BREAKS[ti + ':' + k];
+        if (prevCtx === 0) { c = 18000 + carry; cr = 0; cw = c - cin; }
+        else if (prevCtx >= LIMIT) {
+          c = ri(14000, 19000); cr = 0; cw = c - cin; truth.comp++;
+          emit({ type: 'user', timestamp: stamp(), isCompactSummary: true, message: { role: 'user', content: 'This session is being continued from a previous conversation. Summary: …' } });
+        } else {
+          cr = prevCtx; cw = carry - cin; c = cin + cw + cr;
+          if (brk === 'idle') { clock += 8 * 60 * 1000; cw = c - cin; cr = 0; truth.idle++; }
+          else if (brk === 'prefix') { cr = prevCtx - 15000; cw = c - cin - cr; truth.prefix++; }
+        }
+        var out = last ? ri(250, 1100) : ri(120, 700);
+        var tool = last ? null : pick(T.tools);
+        var size = 0;
+        if (tool) { var sz = SIZE[tool]; size = ri(sz[0], sz[1]); if (tool === 'Bash' && T.bash) size = Math.round(size * T.bash); }
+        var id = 'msg_' + (++mid), tu = 'toolu_' + (++tid);
+        var mdl = (ti === 1 || ti === 5) ? 'claude-opus-4-1' : 'claude-sonnet-4';
+        var isErr = tool === 'Bash' && tid % 4 === 0; if (isErr) truth.errors++;
+        var usage = function (o) { return { input_tokens: cin, cache_creation_input_tokens: cw, cache_read_input_tokens: cr, output_tokens: o }; };
+        if (tool) {
+          emit({ type: 'assistant', timestamp: stamp(), message: { id: id, model: mdl, role: 'assistant', content: [{ type: 'text', text: '…' }], usage: usage(8) } });
+          emit({ type: 'assistant', timestamp: stamp(), message: { id: id, model: mdl, role: 'assistant', content: [{ type: 'tool_use', id: tu, name: tool, input: argOf(T, tool) }], usage: usage(out) } });
+          truth.rawLines += 2;
+        } else {
+          emit({ type: 'assistant', timestamp: stamp(), message: { id: id, model: mdl, role: 'assistant', content: [{ type: 'text', text: '…' }], usage: usage(out) } });
+          truth.rawLines += 1;
+        }
+        truth.in += cin; truth.cw += cw; truth.cr += cr; truth.out += out; truth.calls++; truth.mainCalls++;
+        if (tool === 'Task') {
+          var sn = ri(4, 6), sctx = 0;
+          for (var s = 0; s < sn; s++) {
+            var sin = ri(2, 6), scw, scr, add = s === 0 ? 9000 : ri(1500, 6000), sout = ri(100, 500);
+            if (s === 0) { scr = 0; scw = add - sin; sctx = add; } else { scr = sctx; scw = add - sin; sctx += add; }
+            emit({ type: 'assistant', isSidechain: true, timestamp: stamp(), message: { id: 'sc_' + mid + '_' + s, role: 'assistant', content: [{ type: 'text', text: '…' }], usage: { input_tokens: sin, cache_creation_input_tokens: scw, cache_read_input_tokens: scr, output_tokens: sout } } });
+            truth.in += sin; truth.cw += scw; truth.cr += scr; truth.out += sout; truth.calls++; truth.rawLines++;
+          }
+        }
+        if (tool) emit({ type: 'user', timestamp: stamp(), message: { role: 'user', content: [{ type: 'tool_result', tool_use_id: tu, content: '…', is_error: isErr || undefined }] } });
+        carry = out + size;
+        prevCtx = c;
+      }
+    });
+    return { text: lines.join('\n'), truth: truth };
+  }
+
+  var api = { parseSession: parseSession, analyze: analyze, makeSample: makeSample, compact: compact, full: full, clip: clip, pct1: pct1, dur: dur, NO_TOOL: NO_TOOL, toolJa: toolJa, TTL_MS: TTL_MS };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  else root.Ledger = api;
+})(typeof window !== 'undefined' ? window : this);
+
+</script>
+<script>
+(function () {
+  'use strict';
+  var L = window.Ledger;
+  var $ = function (s) { return document.querySelector(s); };
+  function h(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; }
+  var esc = function (s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+  var cp = L.compact, fl = L.full, clip = L.clip;
+  var pct = function (x) { return Math.round(x * 100) + '%'; };
+  var SAMPLE = 'サンプル(合成データ)';
+
+  var state = { parsed: null, A: null, label: '', opt: { win: 200000, cr: true, side: true, axis: 'time' } };
+
+  /* ---------- tooltip ---------- */
+  var tip = $('#tip');
+  function showTip(build, cx, cy) {
+    tip.textContent = '';
+    build(tip);
+    tip.hidden = false;
+    var r = tip.getBoundingClientRect();
+    var x = cx + 14, y = cy + 14;
+    if (x + r.width > window.innerWidth - 8) x = cx - r.width - 14;
+    if (y + r.height > window.innerHeight - 8) y = cy - r.height - 14;
+    tip.style.left = Math.max(8, x) + 'px';
+    tip.style.top = Math.max(8, y) + 'px';
+  }
+  function hideTip() { tip.hidden = true; }
+  function tRow(color, label, value) {
+    var r = h('div', 'tr');
+    var k = h('span', 'k'); if (color) k.style.background = color; else k.style.visibility = 'hidden';
+    r.appendChild(k); r.appendChild(h('span', 'l', label)); r.appendChild(h('b', '', value));
+    return r;
+  }
+  function tTitle(text) { return h('div', 'tt', text); }
+
+  /* ---------- load ---------- */
+  function showErr(msg) {
+    var e = $('#err');
+    e.hidden = !msg;
+    e.textContent = '';
+    if (msg) {
+      var ic = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      ic.setAttribute('viewBox', '0 0 16 16'); ic.setAttribute('width', '16'); ic.setAttribute('height', '16');
+      ic.innerHTML = '<path d="M8 1.5l7 12.5H1z" fill="var(--crit-ic)"/><rect x="7.3" y="6" width="1.4" height="4" fill="#fff"/><rect x="7.3" y="11" width="1.4" height="1.4" fill="#fff"/>';
+      e.appendChild(ic);
+      e.appendChild(h('span', '', msg));
+    }
+  }
+  function load(text, label) {
+    var P;
+    try { P = L.parseSession(text); } catch (e) { showErr(e.message); return false; }
+    showErr('');
+    state.parsed = P; state.label = label;
+    recompute();
+    return true;
+  }
+  function readFile(f) {
+    if (!f) return;
+    if (f.size > 80e6) { showErr('ファイルが大きすぎます(80MB まで)。'); return; }
+    var r = new FileReader();
+    r.onload = function () { load(String(r.result), f.name); };
+    r.onerror = function () { showErr('ファイルを読めませんでした。'); };
+    r.readAsText(f);
+  }
+  $('#pick').addEventListener('click', function () { $('#file').click(); });
+  $('#file').addEventListener('change', function (e) { readFile(e.target.files[0]); e.target.value = ''; });
+  $('#sampleBtn').addEventListener('click', function () { load(L.makeSample().text, SAMPLE); });
+  $('#pasteBtn').addEventListener('click', function () {
+    var t = $('#paste').value;
+    if (!t.trim()) { showErr('貼り付けるテキストが空です。'); return; }
+    load(t, '貼り付けたテキスト');
+  });
+  var drop = $('#drop');
+  ['dragenter', 'dragover'].forEach(function (n) { drop.addEventListener(n, function (e) { e.preventDefault(); drop.classList.add('over'); }); });
+  ['dragleave', 'drop'].forEach(function (n) { drop.addEventListener(n, function (e) { e.preventDefault(); drop.classList.remove('over'); }); });
+  drop.addEventListener('drop', function (e) { var f = e.dataTransfer && e.dataTransfer.files[0]; readFile(f); });
+
+  /* ---------- filters ---------- */
+  function bindSeg(id, attr, key, conv) {
+    $(id).addEventListener('click', function (e) {
+      var b = e.target.closest('button'); if (!b) return;
+      state.opt[key] = conv(b.getAttribute(attr));
+      var bs = $(id).querySelectorAll('button');
+      for (var i = 0; i < bs.length; i++) bs[i].setAttribute('aria-pressed', String(bs[i] === b));
+      recompute();
+    });
+  }
+  bindSeg('#winCtl', 'data-win', 'win', Number);
+  bindSeg('#axisCtl', 'data-axis', 'axis', String);
+  $('#crInc').addEventListener('change', function (e) { state.opt.cr = e.target.checked; recompute(); });
+  $('#side').addEventListener('change', function (e) { state.opt.side = e.target.checked; recompute(); });
+  function recompute() {
+    if (!state.parsed) return;
+    state.A = L.analyze(state.parsed, state.opt);
+    render();
+  }
+
+  /* ---------- render ---------- */
+  function render() {
+    var A = state.A, P = state.parsed;
+    var st = $('#status'); st.textContent = '';
+    st.appendChild(h('span', '', '読み込み済み: ' + state.label));
+    st.appendChild(h('span', '', P.tasks.length + ' 依頼 · ' + P.calls.length + ' やり取り' + (P.bad ? ' · 読めない行 ' + P.bad : '')));
+    renderHero(A); renderRanking(A); renderBreakdown(A); renderGauge(A); renderKpis(A); renderFinds(A); renderOpps(A); renderTasks(A); syncAxis(A); drawCtx(); renderTools(A);
+    tables(A);
+  }
+
+
+
+  /* ---------- viewpoint ranking ---------- */
+  var RK = { cat: 'all', shown: 20, q: '' };
+  var rq = document.getElementById('rankQ');
+  if (rq) rq.addEventListener('input', function () { RK.q = rq.value.slice(0, 60); RK.shown = 20; if (state.A) renderRanking(state.A); });
+  function renderRanking(A) {
+    var R = A.ranking, T = A.totals.processed || 1;
+    $('#rankSub').textContent = '減らす観点を ' + R.total + ' 個用意して、この記録に当てはめました。' + R.hit.length + ' 個が当てはまり、減らせそうな量が大きい順に並べています。量は、各項目の注記にある仮定で見積もった目安です。観点どうしで重なる分があるため、足し算はできません。';
+    var cats = {}; R.hit.forEach(function (v) { cats[v.cat] = (cats[v.cat] || 0) + 1; });
+    var cb = $('#rankCats'); cb.textContent = '';
+    var names = ['all'].concat(Object.keys(cats));
+    if (names.indexOf(RK.cat) < 0) RK.cat = 'all';
+    names.forEach(function (nm) {
+      var b = h('button', 'cat', (nm === 'all' ? 'すべて' : nm) + ' ' + (nm === 'all' ? R.hit.length : cats[nm])); b.type = 'button';
+      b.setAttribute('aria-pressed', String(RK.cat === nm));
+      b.addEventListener('click', function () { RK.cat = nm; RK.shown = 20; renderRanking(state.A); });
+      cb.appendChild(b);
+    });
+    var qq = RK.q.trim().toLowerCase();
+    var hasQ = function (v) { return !qq || (v.title + ' ' + v.cat + ' ' + (v.tip || '')).toLowerCase().indexOf(qq) >= 0; };
+    var items = R.hit.filter(function (v) { return (RK.cat === 'all' || v.cat === RK.cat) && hasQ(v); });
+    var nq = qq ? R.miss.filter(hasQ).length : 0;
+    $('#rankQn').textContent = qq ? '当てはまった ' + items.length + ' 個 · 当てはまらなかった ' + nq + ' 個' : '';
+    var maxS = items.length ? items[0].saving : 1;
+    var ol = $('#rankList'); ol.textContent = '';
+    items.slice(0, RK.shown).forEach(function (v, i) {
+      var li = h('li', 'rk-i'), d = h('details', 'rk-d'), sm = h('summary', 'rk-s');
+      sm.appendChild(h('span', 'rk-n', String(i + 1)));
+      var mid = h('span', 'rk-m'); mid.appendChild(h('span', 'chip', v.cat)); mid.appendChild(h('span', 'rk-t', v.title)); sm.appendChild(mid);
+      var bar = h('span', 'rk-b'), bi = h('i'); bi.style.width = Math.max(2, v.saving / maxS * 100) + '%'; bar.appendChild(bi); sm.appendChild(bar);
+      sm.appendChild(h('span', 'rk-p', '−' + L.pct1(v.saving / T)));
+      d.appendChild(sm);
+      var body = h('div', 'rk-body');
+      body.appendChild(h('p', 'cap', '約 ' + cp(v.saving) + ' トークン。' + v.basis));
+      if (v.tip) { var tp = h('p', 'tipx'); tp.appendChild(h('span', 'tl', '直し方')); tp.appendChild(h('span', '', v.tip)); body.appendChild(tp); }
+      if (v.rows && v.rows.length) {
+        var ul = h('ul', 'evl');
+        v.rows.forEach(function (r) {
+          var li2 = h('li'), b = h('button', 'evr'); b.type = 'button';
+          b.setAttribute('aria-label', 'やり取り #' + r.call + ' をグラフで見る');
+          b.appendChild(h('span', 'cn', '#' + r.call)); b.appendChild(h('span', 'lb', r.label)); b.appendChild(h('span', 'vl', r.value));
+          b.addEventListener('click', function () { focusCall(r.call); });
+          li2.appendChild(b); ul.appendChild(li2);
+        });
+        body.appendChild(ul);
+      }
+      if (v.detail && document.getElementById('opp-' + v.detail)) {
+        var go = h('button', 'btn', '上のくわしい説明を見る'); go.type = 'button';
+        go.addEventListener('click', function () { var el = document.getElementById('opp-' + v.detail); if (el) el.scrollIntoView({ block: 'start', behavior: 'smooth' }); });
+        body.appendChild(go);
+      }
+      d.appendChild(body); li.appendChild(d); ol.appendChild(li);
+    });
+    var more = $('#rankMore');
+    more.hidden = items.length <= RK.shown;
+    more.textContent = 'さらに ' + Math.min(20, items.length - RK.shown) + ' 件を表示(残り ' + (items.length - RK.shown) + ' 件)';
+    more.onclick = function () { RK.shown += 20; renderRanking(state.A); };
+    var uq = $('#rankUnq'); uq.textContent = '';
+    if (R.unq.length) {
+      uq.appendChild(h('p', 'cap', '量を見積もれない観点: ' + R.unq.map(function (v) { return v.title; }).join('、')));
+    }
+    $('#missSum').textContent = '当てはまらなかった観点 ' + (qq ? nq + ' / ' : '') + R.miss.length + ' 個を見る';
+    var ml = $('#missList'); ml.textContent = '';
+    var by = {}; R.miss.filter(hasQ).forEach(function (v) { (by[v.cat] = by[v.cat] || []).push(v.title); });
+    Object.keys(by).forEach(function (k) {
+      var g = h('div', 'miss-g'); g.appendChild(h('h4', '', k + '(' + by[k].length + ')'));
+      var u = h('ul'); by[k].forEach(function (x) { u.appendChild(h('li', '', x)); }); g.appendChild(u); ml.appendChild(g);
+    });
+  }
+
+  /* ---------- hero / breakdown / gauge ---------- */
+  function renderHero(A) {
+    var box = $('#heroSave'); box.textContent = '';
+    var T = A.totals;
+    var saves = A.opps.filter(function (o) { return o.kind === 'save'; });
+    if (!saves.length || !T.processed) {
+      box.appendChild(h('p', 'hl', '削減の見込み'));
+      box.appendChild(h('p', 'lead', '大きく減らせそうな項目は見つかりませんでした。今のところ、無駄の少ない使い方です。'));
+      box.appendChild(h('p', 'fine', 'この記録だけでは、全体の 0.5% を超える削減余地がありません。やり取りが増えたら、もう一度読み込んでください。'));
+      return;
+    }
+    var best = saves[0], p = best.saving / T.processed;
+    var times = 1 / Math.max(0.0001, 1 - Math.min(0.9, p));
+    box.appendChild(h('p', 'hl', 'いちばん効く 1 つを直すと'));
+    var big = h('div', 'big'); big.appendChild(h('span', 'num', '−' + Math.round(p * 100) + '%')); big.appendChild(h('span', 'unit', '使うトークンが減る見込み'));
+    box.appendChild(big);
+    var lead = h('p', 'lead');
+    lead.appendChild(document.createTextNode('「' + best.title + '」を直すと、同じ作業で使うトークンが約 '));
+    lead.appendChild(h('strong', '', Math.round(p * 100) + '%'));
+    lead.appendChild(document.createTextNode(' 減ります。同じ上限のまま、作業を約 '));
+    lead.appendChild(h('strong', '', times.toFixed(1) + ' 倍'));
+    lead.appendChild(document.createTextNode(' 進められる計算です。'));
+    box.appendChild(lead);
+    var ol = h('ol', 'top3');
+    var maxS = saves[0].saving;
+    saves.slice(0, 3).forEach(function (o, i) {
+      var li = h('li'), a = h('a'); a.href = '#opp-' + o.id;
+      a.appendChild(h('span', 'n', String(i + 1)));
+      a.appendChild(h('span', 't', o.title));
+      var tr = h('span', 'tr2'), bi = h('i'); bi.style.width = (o.saving / maxS * 100) + '%'; tr.appendChild(bi); a.appendChild(tr);
+      a.appendChild(h('span', 'p', '−' + Math.round(o.saving / T.processed * 100) + '%'));
+      a.addEventListener('click', function (e) {
+        var el = document.getElementById('opp-' + o.id);
+        if (el) { e.preventDefault(); var calm = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; el.scrollIntoView({ block: 'start', behavior: calm ? 'auto' : 'smooth' }); }
+      });
+      li.appendChild(a); ol.appendChild(li);
+    });
+    box.appendChild(ol);
+    box.appendChild(h('p', 'fine', '割合は、使い回し分も含めたトークン合計に対する目安です。対策どうしは重なる分があるため、足し算はできません。利用制限への数え方が一定であるという仮定で、作業の倍率を出しています。'));
+  }
+
+  function renderBreakdown(A) {
+    var T = A.totals, box = $('#breakdown'); box.textContent = '';
+    var parts = [
+      { cls: 's1', name: '新しく送った分', ds: 'あなたの指示と、新しく読み込んだファイルやコマンド結果です。', v: T.in + T.cw },
+      { cls: 's2', name: '使い回し分(キャッシュ)', ds: '前回までの会話を、毎回読み直した分です。', v: T.cr },
+      { cls: 's3', name: 'Claude の返答', ds: 'Claude が書いた文章やコードです。', v: T.out }
+    ];
+    var tot = parts.reduce(function (a, x) { return a + x.v; }, 0) || 1;
+    var bar = h('div', 'bd-bar'); bar.setAttribute('role', 'img'); bar.setAttribute('aria-label', 'トークンの内訳: ' + parts.map(function (x) { return x.name + ' ' + pct(x.v / tot); }).join('、'));
+    parts.forEach(function (x) { var s = h('i', x.cls); s.style.flexGrow = String(x.v); s.style.flexBasis = '0'; s.title = x.name; bar.appendChild(s); });
+    box.appendChild(bar);
+    var ul = h('ul', 'bd-list');
+    parts.forEach(function (x) {
+      var li = h('li'); li.appendChild(h('i', 'sw ' + x.cls));
+      var nm = h('div', 'nm', x.name); nm.appendChild(h('span', 'ds', x.ds)); li.appendChild(nm);
+      var vl = h('div', 'vl', cp(x.v)); vl.appendChild(h('small', '', pct(x.v / tot))); li.appendChild(vl);
+      ul.appendChild(li);
+    });
+    box.appendChild(ul);
+    box.appendChild(h('p', 'note2', '使い回し分は、料金の面では安く扱われます。利用制限にどれだけ数えられるかは公開されていないため、上のフィルターで数える・数えないを切り替えて見比べられます。'));
+  }
+
+  var GIC = {
+    good: '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="var(--good)"/><path d="M4.6 8.3l2.2 2.2 4.6-4.9" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    warn: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5l7 12.5H1z" fill="var(--warn-ic)"/><rect x="7.3" y="6" width="1.4" height="4" fill="#0b0b0b"/><rect x="7.3" y="11" width="1.4" height="1.4" fill="#0b0b0b"/></svg>',
+    crit: '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="var(--crit-ic)"/><rect x="7.2" y="3.6" width="1.6" height="5.4" fill="#fff"/><rect x="7.2" y="10.3" width="1.6" height="1.7" fill="#fff"/></svg>'
+  };
+  function renderGauge(A) {
+    var box = $('#gauge'); box.textContent = '';
+    var f = A.peak.ctx / A.win, p = Math.min(1, f);
+    var st = f >= 0.8 ? ['crit', '上限が近いです', 'var(--crit-ic)'] : f >= 0.5 ? ['warn', '半分を超えています', 'var(--warn-ic)'] : ['good', '余裕があります', 'var(--good)'];
+    var top = h('div', 'gauge-num');
+    top.appendChild(h('b', '', cp(A.peak.ctx)));
+    top.appendChild(h('span', '', '/ 上限 ' + cp(A.win) + '(' + pct(f) + ')'));
+    var pill = h('span', 'pill'); pill.innerHTML = GIC[st[0]]; pill.appendChild(document.createTextNode(st[1]));
+    top.appendChild(pill);
+    box.appendChild(top);
+    var g = h('div', 'gauge'); g.setAttribute('role', 'img'); g.setAttribute('aria-label', '会話の最大の長さは上限の ' + pct(f) + '。' + st[1]);
+    var tr = h('div', 'track'), fi = h('div', 'fill'); fi.style.width = (p * 100) + '%'; fi.style.background = st[2]; tr.appendChild(fi);
+    [0.5, 0.8].forEach(function (t) { var k = h('i', 'tick'); k.style.left = (t * 100) + '%'; tr.appendChild(k); });
+    g.appendChild(tr);
+    [[0.5, '50%'], [0.8, '80%']].forEach(function (t) { var l = h('span', 'tl2', t[1]); l.style.left = (t[0] * 100) + '%'; g.appendChild(l); });
+    box.appendChild(g);
+    box.appendChild(h('p', 'gauge-meta', 'いちばん長くなったのは、やり取り #' + A.peak.idx + '、依頼 #' + A.peak.task + ' の途中です。' + (A.comps.length ? '会話の要約は ' + A.comps.length + ' 回ありました。' : 'まだ要約は行われていません。')));
+    box.appendChild(h('p', 'note2', f >= 0.5 ? '長くなるほど、1 回ごとの消費も増えます。区切りのよいところで /compact を実行すると、以降の消費が軽くなります。' : '今は余裕があります。作業が続いて半分を超えたら、区切りで /compact を実行すると、以降の消費が軽くなります。'));
+  }
+
+  function renderKpis(A) {
+    var T = A.totals, pk = Math.round(A.peak.ctx / A.win * 100);
+    var items = [
+      ['依頼', A.tasks.length + ' 件', 'やり取り ' + T.mainCalls + ' 回' + (T.subCalls ? ' + サブエージェント ' + T.subCalls + ' 回' : '') + (T.spanMs ? ' · 経過 ' + L.dur(T.spanMs) : '')],
+      ['使ったトークン(合計)', cp(T.processed), 'うち使い回し ' + pct(T.processed ? T.cr / T.processed : 0)],
+      ['使い回しを除く', cp(T.fresh), '新しく送った分 ' + cp(T.in + T.cw) + ' + 返答 ' + cp(T.out)],
+      ['会話の要約', A.comps.length + ' 回', A.comps.length ? 'やり取り ' + A.comps.slice(0, 4).map(function (i) { return '#' + i; }).join('、') + (A.comps.length > 4 ? ' ほか' : '') : 'まだありません']
+    ];
+    var dl = $('#kpis'); dl.textContent = '';
+    items.forEach(function (it) {
+      var d = h('div'); d.appendChild(h('dt', '', it[0]));
+      var dd = h('dd'); dd.appendChild(h('span', 'v', it[1])); dd.appendChild(h('span', 'd', it[2]));
+      d.appendChild(dd); dl.appendChild(d);
+    });
+  }
+
+  var IC = {
+    warn: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5l7 12.5H1z" fill="var(--warn-ic)"/><rect x="7.3" y="6" width="1.4" height="4" fill="#0b0b0b"/><rect x="7.3" y="11" width="1.4" height="1.4" fill="#0b0b0b"/></svg>',
+    info: '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="none" stroke="var(--muted)" stroke-width="1.5"/><rect x="7.3" y="7" width="1.4" height="4.5" fill="var(--muted)"/><rect x="7.3" y="4.4" width="1.4" height="1.4" fill="var(--muted)"/></svg>'
+  };
+  function renderFinds(A) {
+    var ul = $('#finds'); ul.textContent = '';
+    A.findings.forEach(function (f) {
+      var li = h('li');
+      var lv = h('span', 'lv'); lv.innerHTML = IC[f.kind]; lv.appendChild(document.createTextNode(f.kind === 'warn' ? '注意' : '目安'));
+      var tx = h('span', 'tx');
+      f.parts.forEach(function (p) { if (typeof p === 'string') tx.appendChild(document.createTextNode(p)); else tx.appendChild(h('strong', '', p.b)); });
+      li.appendChild(lv); li.appendChild(tx); ul.appendChild(li);
+    });
+  }
+
+  /* ----- opportunities ----- */
+  function addParts(el, parts) {
+    parts.forEach(function (p) { if (typeof p === 'string') el.appendChild(document.createTextNode(p)); else el.appendChild(h('strong', '', p.b)); });
+  }
+  function focusCall(idx) {
+    if (!state.focusAt) return;
+    var el = $('#ctxChart');
+    var calm = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    el.scrollIntoView({ block: 'center', behavior: calm ? 'auto' : 'smooth' });
+    setTimeout(function () { el.focus({ preventScroll: true }); state.focusAt(idx); }, calm ? 30 : 380);
+  }
+  var CAT = { compact: '会話の使い方', carry: '会話の使い方', big: '会話の使い方', dup: '会話の使い方', cache: '会話の使い方', rerun: '会話の使い方', batch: '指示の出し方', scope: '指示の出し方', redo: '指示の出し方', paste: '指示の出し方', delegate: '指示の出し方', repeat: '指示の出し方', rewrite: '指示の出し方', base: '設定', errors: '設定', model: '設定', out: '指示の出し方', sub: '設定' };
+  function renderOpps(A) {
+    var ol = $('#opps'); ol.textContent = '';
+    var saves = A.opps.filter(function (o) { return o.kind === 'save'; });
+    $('#oppsEmpty').hidden = saves.length > 0;
+    var maxS = saves.reduce(function (m, o) { return Math.max(m, o.saving); }, 1);
+    var n = 0;
+    var refHead = false;
+    A.opps.forEach(function (o) {
+      if (o.kind === 'ref' && !refHead) { refHead = true; var gh = h('li', 'grp'); gh.appendChild(h('h3', '', '量を見積もれない項目')); gh.appendChild(h('p', 'sub', 'トークンの数は変わらない、または量を出せない項目です。当てはまるものがあれば、見直してください。')); ol.appendChild(gh); }
+      var li = h('li', 'opp'); li.id = 'opp-' + o.id;
+      li.appendChild(h('div', 'rk' + (o.kind === 'ref' ? ' ref' : ''), o.kind === 'save' ? String(++n) : '参考'));
+      var ob = h('div', 'ob');
+      var oh = h('div', 'oh');
+      var hw = h('div', 'ohw'); if (CAT[o.id]) hw.appendChild(h('span', 'chip', CAT[o.id])); hw.appendChild(h('h3', '', o.title)); oh.appendChild(hw);
+      if (o.saving !== null) {
+        var sv = h('div', 'sv');
+        var sb = h('b', '', '−' + cp(o.saving)); sb.appendChild(h('small', 'u', ' トークン')); sv.appendChild(sb);
+        sv.appendChild(h('small', '', '全体の ' + L.pct1(o.saving / A.totals.processed)));
+        var bar = h('div', 'sbar'), bi = h('i'); bi.style.width = (o.saving / maxS * 100) + '%'; bar.appendChild(bi); sv.appendChild(bar);
+        oh.appendChild(sv);
+      }
+      ob.appendChild(oh);
+      var os = h('p', 'os'); addParts(os, o.parts); ob.appendChild(os);
+      if (o.tip) { var tp = h('p', 'tipx'); tp.appendChild(h('span', 'tl', '直し方')); tp.appendChild(h('span', '', o.tip)); ob.appendChild(tp); }
+      if (o.example) {
+        var ex = h('div', 'ex');
+        var e1 = h('div', 'ex-r bad'); e1.appendChild(h('span', 'ex-l', 'いまの言い方')); e1.appendChild(h('span', 'ex-t', o.example.bad));
+        var e2 = h('div', 'ex-r good'); e2.appendChild(h('span', 'ex-l', '言い換え')); e2.appendChild(h('span', 'ex-t', o.example.good));
+        ex.appendChild(e1); ex.appendChild(e2); ob.appendChild(ex);
+      }
+      if (o.rows && o.rows.length) {
+        ob.appendChild(h('p', 'evh', '該当箇所'));
+        var ul = h('ul', 'evl');
+        o.rows.forEach(function (r) {
+          var li2 = h('li'), b = h('button', 'evr'); b.type = 'button';
+          b.setAttribute('aria-label', 'やり取り #' + r.call + ' をグラフで見る');
+          b.appendChild(h('span', 'cn', '#' + r.call)); b.appendChild(h('span', 'lb', r.label)); b.appendChild(h('span', 'vl', r.value));
+          b.addEventListener('click', function () { focusCall(r.call); });
+          li2.appendChild(b); ul.appendChild(li2);
+        });
+        ob.appendChild(ul);
+      }
+      if (o.bars) {
+        var wbs = h('div', 'wbs');
+        var maxP = o.bars.reduce(function (m, b) { return Math.max(m, b.pct); }, 0.0001);
+        o.bars.forEach(function (b) {
+          var row = h('div', 'wb' + (b.best ? ' best' : ''));
+          row.appendChild(h('span', '', b.label));
+          var bw = h('div', 'tbarwrap');
+          if (b.value > 0) { var st = h('div', 'stack'); st.style.width = (b.pct / maxP * 100) + '%'; var sg = h('i', 's1'); sg.style.flexGrow = '1'; st.appendChild(sg); bw.appendChild(st); }
+          row.appendChild(bw);
+          var vv = h('span', 'vv', b.value > 0 ? '−' + L.pct1(b.pct) : b.value < 0 ? '増える' : '効果なし');
+          vv.appendChild(h('small', '', '要約 ' + b.resets + ' 回' + (b.best ? ' · 最良' : '')));
+          row.appendChild(vv);
+          wbs.appendChild(row);
+        });
+        ob.appendChild(wbs);
+      }
+      if (o.note) ob.appendChild(h('p', 'cap', o.note));
+      li.appendChild(ob);
+      ol.appendChild(li);
+    });
+  }
+
+  /* ----- chart 1: per-task stacked bars ----- */
+  var SERIES = [
+    { k: 'a', name: '新しく送った分', cls: 's1', v: 'var(--s1)' },
+    { k: 'b', name: '使い回し分(キャッシュ)', cls: 's2', v: 'var(--s2)' },
+    { k: 'c', name: 'Claude の返答', cls: 's3', v: 'var(--s3)' }
+  ];
+  function vals(t) { return { a: t.newTok, b: state.opt.cr ? t.cr : 0, c: t.out }; }
+  function renderTasks(A) {
+    var inc = state.opt.cr;
+    $('#taskSub').textContent = inc
+      ? '1 つの依頼の中のすべてのやり取りで使ったトークンの合計です。使い回し分は毎回の送信で積み上がって大きくなるため、他の色は細く見えます。右上の「使い回し分も数える」を外すと、新しく送った分と返答だけを比べられます。'
+      : '1 つの依頼の中のすべてのやり取りで使ったトークンの合計です(使い回し分は除いています)。新しく送った分と、Claude の返答だけを比べています。';
+    var active = SERIES.filter(function (s) { return inc || s.k !== 'b'; });
+    var lg = $('#taskLegend'); lg.textContent = '';
+    active.forEach(function (s) { var sp = h('span'); sp.appendChild(h('i', 'sw ' + s.cls)); sp.appendChild(document.createTextNode(s.name)); lg.appendChild(sp); });
+
+    var sorted = A.tasks.slice().sort(function (a, b) { var va = vals(a), vb = vals(b); return (vb.a + vb.b + vb.c) - (va.a + va.b + va.c); });
+    var top = sorted.slice(0, 10), rest = sorted.slice(10);
+    var rows = top.map(function (t) { var v = vals(t); return { t: t, label: t.title, no: '#' + t.id, v: v, total: v.a + v.b + v.c }; });
+    if (rest.length) {
+      var rv = { a: 0, b: 0, c: 0 }, calls = 0;
+      rest.forEach(function (t) { var v = vals(t); rv.a += v.a; rv.b += v.b; rv.c += v.c; calls += t.calls; });
+      rows.push({ t: null, label: 'その他 ' + rest.length + ' 件', no: '', v: rv, total: rv.a + rv.b + rv.c, calls: calls, dim: true });
+    }
+    var max = rows.reduce(function (m, r) { return Math.max(m, r.total); }, 1);
+    var box = $('#tasks'); box.textContent = '';
+    rows.forEach(function (r) {
+      var row = h('div', 'trow' + (r.dim ? ' dim' : '')); row.setAttribute('role', 'listitem'); row.tabIndex = 0;
+      var lab = h('div', 'tlabel'); lab.appendChild(h('span', 'tno', r.no)); lab.appendChild(h('span', 'ttl', r.label));
+      var bw = h('div', 'tbarwrap'); var stack = h('div', 'stack'); stack.style.width = (r.total / max * 100) + '%';
+      active.filter(function (s) { return r.v[s.k] / max > 0.002; }).forEach(function (s) { var seg = h('i', s.cls); seg.style.flexGrow = String(r.v[s.k]); stack.appendChild(seg); });
+      bw.appendChild(stack);
+      var val = h('div', 'tval', cp(r.total));
+      row.appendChild(lab); row.appendChild(bw); row.appendChild(val);
+      var build = function (el) {
+        el.appendChild(tTitle(r.no ? r.no + ' ' + clip(r.label, 60) : r.label));
+        active.forEach(function (s) { el.appendChild(tRow(s.v, s.name, fl(r.v[s.k]) + ' トークン')); });
+        var note = r.t
+          ? 'やり取り ' + r.t.calls + ' 回' + (r.t.sub ? '(うちサブエージェント ' + r.t.sub + ')' : '') + (r.t.dur !== null ? ' · 所要 ' + L.dur(r.t.dur) : '') + ' · 会話の最大の長さ ' + cp(r.t.peak)
+          : 'やり取り ' + r.calls + ' 回';
+        el.appendChild(h('div', 'tn', note));
+      };
+      row.addEventListener('pointermove', function (e) { showTip(build, e.clientX, e.clientY); });
+      row.addEventListener('pointerleave', hideTip);
+      row.addEventListener('focus', function () { var b = row.getBoundingClientRect(); showTip(build, b.left + b.width / 2, b.bottom - 8); });
+      row.addEventListener('blur', hideTip);
+      box.appendChild(row);
+    });
+  }
+
+  /* ----- chart 2: context length line ----- */
+  var sel = 0;
+  function clock(ts, withSec) {
+    var d = new Date(ts), p = function (n) { return (n < 10 ? '0' : '') + n; };
+    return p(d.getHours()) + ':' + p(d.getMinutes()) + (withSec ? ':' + p(d.getSeconds()) : '');
+  }
+  function syncAxis(A) {
+    if (!A.timed && state.opt.axis === 'time') state.opt.axis = 'idx';
+    var bs = $('#axisCtl').querySelectorAll('button');
+    for (var i = 0; i < bs.length; i++) {
+      var isT = bs[i].getAttribute('data-axis') === 'time';
+      bs[i].disabled = isT && !A.timed;
+      bs[i].title = isT && !A.timed ? 'この記録には時刻がないため選べません' : '';
+      bs[i].setAttribute('aria-pressed', String(bs[i].getAttribute('data-axis') === state.opt.axis));
+    }
+  }
+  function callTip(m, el) {
+    var A = state.A, t = A.tasks.filter(function (x) { return x.id === m.task; })[0];
+    el.appendChild(tTitle('やり取り #' + m.idx + ' · 依頼 #' + m.task + '「' + clip(t.title, 40) + '」'));
+    el.appendChild(tRow('var(--s1)', '会話の長さ', fl(m.ctx) + '(' + pct(m.ctx / A.win) + ')'));
+    if (A.timed) el.appendChild(tRow(null, '時刻', clock(m.ts, true) + '(開始から ' + L.dur(m.ts - A.t0) + ')'));
+    if (m.delta !== null) el.appendChild(tRow(null, '直前からの増え方', (m.delta >= 0 ? '+' : '') + fl(m.delta)));
+    el.appendChild(tRow(null, 'このやり取りで使ったツール', m.tools.length ? clip(m.tools.join('、'), 40) : 'なし'));
+    if (m.comp) el.appendChild(h('div', 'tn', '要約の直後です。短くなった会話を、使い回し用に書き直しています。'));
+    if (m.brk) el.appendChild(h('div', 'tn', m.brk.kind === 'idle'
+      ? '使い回しが切れました(' + (m.brk.gapMin !== null ? Math.round(m.brk.gapMin) + ' 分' : '') + '離れていた)。' + cp(m.brk.lost) + ' トークンを送り直しています。'
+      : '会話の先頭が変わったようです。' + cp(m.brk.lost) + ' トークンを送り直しています。'));
+  }
+  function drawCtx() {
+    var A = state.A, el = $('#ctxChart'), M = A.main, N = M.length;
+    var time = A.timed && state.opt.axis === 'time';
+    var W = Math.max(300, Math.floor(el.clientWidth)), H = 300, ml = 46, mr = 18, mt = 18, mb = time ? 62 : 44;
+    var win = A.win, ymax = Math.max(win, A.peak.ctx * 1.05);
+    var pw = W - ml - mr, ph = H - mt - mb, ty = mt + ph;
+    var span = time ? A.t1 - A.t0 : 1;
+    var Xp = function (p) { return ml + (N === 1 ? 0.5 : Math.min(1, Math.max(0, (p - 1) / (N - 1)))) * pw; };
+    var XT = function (ts) { return ml + (ts - A.t0) / span * pw; };
+    var XM = function (m) { return time ? XT(m.ts) : Xp(m.idx); };
+    var Y = function (v) { return mt + (1 - v / ymax) * ph; };
+    var steps = [5000, 10000, 20000, 25000, 50000, 100000, 200000, 250000, 500000, 1000000];
+    var step = 1000000;
+    for (var q = 0; q < steps.length; q++) { if (ymax / steps[q] <= 5) { step = steps[q]; break; } }
+    if (ymax / step > 6) step = Math.pow(10, Math.ceil(Math.log(ymax / 5) / Math.LN10));
+    var s = '<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" aria-hidden="true">';
+
+    // task bands (alternate) and idle gaps
+    var starts = A.tasks.filter(function (t) { return t.mainCalls; });
+    if (N > 1) {
+      starts.forEach(function (t, k) {
+        if (k % 2 === 0) return;
+        var nxt = starts[k + 1];
+        var x0, x1;
+        if (time) { x0 = XT(M[t.first - 1].ts); x1 = nxt ? XT(M[nxt.first - 1].ts) : XT(A.t1); }
+        else { x0 = Xp(t.first - 0.5); x1 = Xp(t.first + t.mainCalls - 0.5); }
+        s += '<rect class="band" x="' + x0 + '" y="' + mt + '" width="' + Math.max(0, x1 - x0) + '" height="' + ph + '"/>';
+      });
+    }
+    if (time) {
+      A.gaps.forEach(function (g) {
+        var x0 = XT(M[g.from - 1].ts), x1 = XT(M[g.to - 1].ts);
+        s += '<rect class="gap" x="' + x0 + '" y="' + mt + '" width="' + Math.max(1, x1 - x0) + '" height="' + ph + '"/>';
+        if (x1 - x0 >= 64) s += '<text class="ink2" x="' + ((x0 + x1) / 2) + '" y="' + (mt + 13) + '" text-anchor="middle">離れていた ' + L.dur(g.ms) + '</text>';
+      });
+    }
+    for (var v = 0, vn = 0; v <= ymax + 1 && vn < 12; v += step, vn++) {
+      s += '<line class="g" x1="' + ml + '" x2="' + (W - mr) + '" y1="' + Y(v) + '" y2="' + Y(v) + '"/>';
+      s += '<text x="' + (ml - 8) + '" y="' + (Y(v) + 4) + '" text-anchor="end">' + cp(v) + '</text>';
+    }
+    s += '<line class="lim" x1="' + ml + '" x2="' + (W - mr) + '" y1="' + Y(win) + '" y2="' + Y(win) + '"/>';
+    s += '<text class="ink2" x="' + (W - mr) + '" y="' + (Y(win) - 5) + '" text-anchor="end">上限 ' + cp(win) + '</text>';
+    s += '<line class="lim" x1="' + ml + '" x2="' + (W - mr) + '" y1="' + Y(win * 0.8) + '" y2="' + Y(win * 0.8) + '"/>';
+    s += '<text x="' + (W - mr) + '" y="' + (Y(win * 0.8) - 5) + '" text-anchor="end">80%</text>';
+    s += '<line class="b" x1="' + ml + '" x2="' + (W - mr) + '" y1="' + Y(0) + '" y2="' + Y(0) + '"/>';
+
+    // line: straight between calls on the call axis, stepped on the time axis (the context holds until the next call)
+    var pts = M.map(function (m) { return [XM(m), Y(m.ctx)]; });
+    if (N > 1) {
+      var d = 'M' + pts[0][0].toFixed(1) + ',' + pts[0][1].toFixed(1);
+      for (var k = 1; k < N; k++) d += time ? 'H' + pts[k][0].toFixed(1) + 'V' + pts[k][1].toFixed(1) : 'L' + pts[k][0].toFixed(1) + ',' + pts[k][1].toFixed(1);
+      s += '<path class="area" d="' + d + 'L' + pts[N - 1][0].toFixed(1) + ',' + Y(0) + 'L' + pts[0][0].toFixed(1) + ',' + Y(0) + 'Z"/>';
+      s += '<path class="line" d="' + d + '"/>';
+    }
+    M.forEach(function (m) { if (m.comp) s += '<circle class="cmp" cx="' + XM(m) + '" cy="' + Y(m.ctx) + '" r="5"/>'; });
+    M.forEach(function (m) {
+      if (!m.brk) return;
+      var bx = XM(m), by = Y(m.ctx) + 9;
+      s += '<polygon class="brk" points="' + bx + ',' + (by - 6) + ' ' + (bx - 6) + ',' + (by + 5) + ' ' + (bx + 6) + ',' + (by + 5) + '"/>';
+    });
+    var last = M[N - 1];
+    s += '<circle class="dot" cx="' + XM(last) + '" cy="' + Y(last.ctx) + '" r="4.5"/>';
+    s += '<text class="ink" x="' + (W - mr) + '" y="' + Math.max(mt + 12, Y(last.ctx) - 11) + '" text-anchor="end">' + cp(last.ctx) + '(' + pct(last.ctx / win) + ')</text>';
+    var pk = A.peak;
+    if (Math.abs(XM(pk) - XM(last)) > 40) {
+      s += '<circle class="dot" cx="' + XM(pk) + '" cy="' + Y(pk.ctx) + '" r="4.5"/>';
+      s += '<text class="ink" x="' + XM(pk) + '" y="' + Math.max(mt + 12, Y(pk.ctx) - 11) + '" text-anchor="' + (XM(pk) > W - 90 ? 'end' : 'middle') + '">最大 ' + cp(pk.ctx) + '</text>';
+    }
+
+    // task numbers along the bottom
+    var lastLab = -99;
+    starts.forEach(function (t) {
+      var x = XM(M[t.first - 1]);
+      s += '<line class="b" x1="' + x + '" x2="' + x + '" y1="' + ty + '" y2="' + (ty + 5) + '"/>';
+      if (x - lastLab >= 24) { s += '<text x="' + x + '" y="' + (ty + 18) + '" text-anchor="middle">#' + t.id + '</text>'; lastLab = x; }
+    });
+    // clock ticks
+    if (time) {
+      var tsteps = [1, 2, 5, 10, 15, 30, 60, 120, 180, 360, 720, 1440].map(function (mm) { return mm * 60000; });
+      var stp = tsteps[tsteps.length - 1], maxTicks = Math.max(3, Math.floor(pw / 80));
+      for (var q2 = 0; q2 < tsteps.length; q2++) { if (span / tsteps[q2] <= maxTicks) { stp = tsteps[q2]; break; } }
+      var off = new Date(A.t0).getTimezoneOffset() * 60000;
+      var first = Math.ceil((A.t0 - off) / stp) * stp + off;
+      for (var tk = first, tn = 0; tk <= A.t1 && tn < 60; tk += stp, tn++) {
+        var cx = XT(tk);
+        s += '<line class="b" x1="' + cx + '" x2="' + cx + '" y1="' + (ty + 24) + '" y2="' + (ty + 29) + '"/>';
+        s += '<text x="' + cx + '" y="' + (ty + 42) + '" text-anchor="middle">' + clock(tk) + '</text>';
+      }
+    }
+    s += '<g id="xhg" visibility="hidden"><line class="xh" id="xhl" x1="0" x2="0" y1="' + mt + '" y2="' + ty + '"/><circle class="dot" id="xhc" cx="0" cy="0" r="4.5"/></g>';
+    s += '<rect id="hit" x="' + ml + '" y="0" width="' + pw + '" height="' + ty + '" fill="transparent"/>';
+    s += '</svg>';
+    el.innerHTML = s;
+    el.setAttribute('aria-label', '会話の長さの推移(横軸は' + (time ? '時間' : 'やり取りの順') + ')。最大 ' + fl(pk.ctx) + ' トークン(上限の ' + pct(pk.ctx / win) + ')。詳細は下の表にあります。');
+    $('#ctxCap').textContent = time
+      ? '横軸は時刻です(全体で ' + L.dur(A.totals.spanMs) + ')。濃い灰色の帯は、5 分以上あいていた時間です。黒い丸は会話が要約された直後、黒い三角は使い回しが切れて会話を送り直したやり取りです。背景の帯と下の数字は依頼の番号です。矢印キーで 1 つずつ動かせます。'
+      : '横軸はやり取りの順番です。黒い丸は会話が要約された直後、黒い三角は使い回しが切れて会話を送り直したやり取りです。背景の帯と下の数字は依頼の番号です。矢印キーで 1 つずつ動かせます。' + (A.timed ? '' : ' この記録には時刻がないため、時間の横軸は使えません。');
+
+    var svg = el.querySelector('svg'), xhg = svg.querySelector('#xhg'), xhl = svg.querySelector('#xhl'), xhc = svg.querySelector('#xhc');
+    function nearest(px) {
+      if (!time) return N === 1 ? 1 : Math.round((px - ml) / pw * (N - 1)) + 1;
+      var ts = A.t0 + (px - ml) / pw * span, lo = 0, hi = N - 1;
+      while (lo < hi) { var mid = (lo + hi) >> 1; if (M[mid].ts < ts) lo = mid + 1; else hi = mid; }
+      if (lo > 0 && Math.abs(M[lo - 1].ts - ts) <= Math.abs(M[lo].ts - ts)) lo--;
+      return lo + 1;
+    }
+    function at(idx, cx, cy) {
+      idx = Math.max(1, Math.min(N, idx)); sel = idx;
+      var m = M[idx - 1], x = XM(m);
+      xhl.setAttribute('x1', x); xhl.setAttribute('x2', x); xhc.setAttribute('cx', x); xhc.setAttribute('cy', Y(m.ctx));
+      xhg.setAttribute('visibility', 'visible');
+      if (cx === undefined) { var r = svg.getBoundingClientRect(); cx = r.left + x * r.width / W; cy = r.top + Y(m.ctx) * r.height / H; }
+      showTip(function (t) { callTip(m, t); }, cx, cy);
+    }
+    function off2() { xhg.setAttribute('visibility', 'hidden'); hideTip(); }
+    state.focusAt = function (i) { at(i); };
+    svg.querySelector('#hit').addEventListener('pointermove', function (e) {
+      var r = svg.getBoundingClientRect(), px = (e.clientX - r.left) * (W / r.width);
+      at(nearest(px), e.clientX, e.clientY);
+    });
+    svg.querySelector('#hit').addEventListener('pointerleave', off2);
+    el.onkeydown = function (e) {
+      var kk = e.key;
+      if (kk === 'ArrowRight') { e.preventDefault(); at((sel || 0) + 1); }
+      else if (kk === 'ArrowLeft') { e.preventDefault(); at((sel || 2) - 1); }
+      else if (kk === 'Home') { e.preventDefault(); at(1); }
+      else if (kk === 'End') { e.preventDefault(); at(N); }
+      else if (kk === 'Escape') off2();
+    };
+    el.onblur = off2;
+  }
+  if (window.ResizeObserver) {
+    var lastW = 0;
+    new ResizeObserver(function (en) {
+      var w = Math.round(en[0].contentRect.width);
+      if (w !== lastW) { lastW = w; if (state.A) drawCtx(); }
+    }).observe($('#ctxChart'));
+  }
+
+  /* ----- chart 3: growth by tool ----- */
+  function renderTools(A) {
+    var top = A.tools.slice(0, 8), rest = A.tools.slice(8);
+    var rows = top.map(function (g) { return { name: g.name, growth: g.growth, share: g.share, uses: g.uses, avg: g.avg }; });
+    if (rest.length) {
+      var gs = 0, us = 0; rest.forEach(function (g) { gs += g.growth; us += g.uses; });
+      rows.push({ name: 'その他 ' + rest.length + ' 種', growth: gs, share: A.growTotal ? gs / A.growTotal : 0, uses: us, avg: us ? gs / us : 0, dim: true });
+    }
+    var max = rows.reduce(function (m, r) { return Math.max(m, r.growth); }, 1);
+    var box = $('#tools'); box.textContent = '';
+    if (!rows.length) { box.appendChild(h('p', 'cap', '会話が長くなった箇所がありません。')); return; }
+    rows.forEach(function (r) {
+      var row = h('div', 'trow' + (r.dim ? ' dim' : '')); row.setAttribute('role', 'listitem'); row.tabIndex = 0;
+      var lab = h('div', 'tlabel'); var nm = h('span', 'ttl' + (r.dim ? '' : ' mono'), r.dim ? r.name : L.toolJa(r.name)); lab.appendChild(nm);
+      var bw = h('div', 'tbarwrap'); var stack = h('div', 'stack'); stack.style.width = (r.growth / max * 100) + '%';
+      var seg = h('i', 's1'); seg.style.flexGrow = '1'; stack.appendChild(seg); bw.appendChild(stack);
+      var val = h('div', 'tval', cp(r.growth) + ' · ' + pct(r.share)); val.appendChild(h('small', '', '平均 +' + cp(r.avg) + '/回'));
+      row.appendChild(lab); row.appendChild(bw); row.appendChild(val);
+      var build = function (el) {
+        el.appendChild(tTitle(r.name));
+        el.appendChild(tRow('var(--s1)', '会話が長くなった分', fl(r.growth)));
+        el.appendChild(tRow(null, '全体に占める割合', pct(r.share)));
+        el.appendChild(tRow(null, '回数', fl(r.uses) + ' 回'));
+        el.appendChild(tRow(null, '1 回あたり平均', '+' + fl(r.avg)));
+      };
+      row.addEventListener('pointermove', function (e) { showTip(build, e.clientX, e.clientY); });
+      row.addEventListener('pointerleave', hideTip);
+      row.addEventListener('focus', function () { var b = row.getBoundingClientRect(); showTip(build, b.left + b.width / 2, b.bottom - 8); });
+      row.addEventListener('blur', hideTip);
+      box.appendChild(row);
+    });
+  }
+
+  /* ----- table twins ----- */
+  function fillTable(tbl, head, rows, numCols, wrapCols) {
+    tbl.textContent = '';
+    var thead = h('thead'), tr = h('tr');
+    head.forEach(function (t, i) { var th = h('th', numCols.indexOf(i) >= 0 ? 'n' : '', t); th.scope = 'col'; tr.appendChild(th); });
+    thead.appendChild(tr); tbl.appendChild(thead);
+    var tb = h('tbody');
+    rows.forEach(function (r) {
+      var row = h('tr');
+      r.forEach(function (c, i) { row.appendChild(h('td', (numCols.indexOf(i) >= 0 ? 'n' : '') + (wrapCols.indexOf(i) >= 0 ? ' wrapc' : ''), c)); });
+      tb.appendChild(row);
+    });
+    tbl.appendChild(tb);
+  }
+  function tables(A) {
+    fillTable($('#taskTable'),
+      ['依頼', '内容', 'やり取り', '所要時間', '新しく送った分', '使い回し分', '返答', '合計', '会話の最大の長さ'],
+      A.tasks.slice().sort(function (a, b) { return b.total - a.total; }).map(function (t) {
+        return ['#' + t.id, clip(t.title, 80), String(t.calls), t.dur === null ? '' : L.dur(t.dur), fl(t.newTok), fl(t.cr), fl(t.out), fl(t.total), fl(t.peak)];
+      }), [2, 4, 5, 6, 7, 8], [1]);
+    var head = ['やり取り', '依頼'].concat(A.timed ? ['時刻'] : []).concat(['会話の長さ', '上限に対する割合', '直前からの増え方', '使ったツール', '備考']);
+    var base = 2 + (A.timed ? 1 : 0);
+    fillTable($('#ctxTable'), head,
+      A.main.map(function (m) {
+        return ['#' + m.idx, '#' + m.task].concat(A.timed ? [clock(m.ts, true)] : []).concat([fl(m.ctx), pct(m.ctx / A.win), m.delta === null ? '' : (m.delta >= 0 ? '+' : '') + fl(m.delta), m.tools.join('、'), m.comp ? '要約の直後' : (m.brk ? (m.brk.kind === 'idle' ? '離れていて使い回しが切れた' : '会話の先頭が変わった(推定)') : '')]);
+      }), [base, base + 1, base + 2], [base + 3]);
+    fillTable($('#toolTable'),
+      ['ツール', '会話が長くなった分', '割合', '回数', '1 回あたり平均'],
+      A.tools.map(function (g) { return [g.name, fl(g.growth), pct(g.share), fl(g.uses), '+' + fl(g.avg)]; }), [1, 2, 3, 4], []);
+  }
+
+  window.addEventListener('scroll', hideTip, { passive: true });
+  load(L.makeSample().text, SAMPLE);
+})();
+</script>
+
+</body></html>
