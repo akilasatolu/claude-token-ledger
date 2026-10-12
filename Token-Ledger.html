@@ -329,6 +329,76 @@ tr:last-child td { border-bottom: 0; }
 @media (max-width: 560px) { .gloss dl { grid-template-columns: 1fr; gap: 0; } .gloss dd { margin-bottom: 8px; } }
 .foot { margin: 0; font-size: .78rem; color: var(--muted); max-width: 64em; }
 .busy { opacity: .55; transition: opacity .12s; }
+.ov { display: flex; flex-direction: column; gap: 16px; }
+.h-big { font-size: 1.25rem; letter-spacing: -0.01em; }
+.kpis4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 0; }
+.kpis4 > div { min-width: 0; background: var(--surface); border: 1px solid var(--hair); border-radius: 14px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; }
+.kpis4 dt { font-size: .78rem; font-weight: 700; color: var(--ink2); }
+.kpis4 dd { margin: 0; }
+.kpis4 .v { display: block; font-family: var(--num); font-size: 1.6rem; font-weight: 600; letter-spacing: -0.03em; line-height: 1.2; font-variant-numeric: tabular-nums; }
+.kpis4 .d { display: block; font-size: .78rem; color: var(--ink2); line-height: 1.5; }
+@media (max-width: 860px) { .kpis4 { grid-template-columns: 1fr 1fr; } }
+.detailhead { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 20px; padding-top: 12px; border-top: 2px solid var(--hair-strong); }
+.detailhead select, input.num { min-width: 0; max-width: 100%; padding: 6px 10px; border: 1px solid var(--hair-strong); border-radius: 8px; background: var(--surface); }
+input.num { width: 9rem; }
+.ovplot { height: 260px; }
+.ovplot svg { height: 260px; }
+.ovplot .bar { fill: var(--s1); }
+.ovplot .bar.sp { fill: var(--s2); }
+.ovplot text { fill: var(--ink2); font-size: 11px; font-family: var(--num); }
+.ovplot .mk { fill: var(--s2); font-size: 11px; }
+.ov .rows { display: flex; flex-direction: column; gap: 4px; }
+.ov .orow { display: grid; grid-template-columns: minmax(0, 1fr) minmax(4rem, 9rem) 5.2rem; gap: 4px 12px; align-items: center; padding: 8px 4px; border-bottom: 1px solid var(--hair); }
+.ov .orow .nm { min-width: 0; overflow-wrap: anywhere; line-height: 1.4; }
+.ov .orow .nm small { display: block; color: var(--muted); font-size: .76rem; }
+.ov .orow .bar2 { height: 8px; background: var(--grid); border-radius: 4px; overflow: hidden; }
+.ov .orow .bar2 i { display: block; height: 100%; background: var(--s1); border-radius: 4px; }
+.ov .orow .vl { text-align: right; font-family: var(--num); font-weight: 600; font-variant-numeric: tabular-nums; }
+.ov button.orow { width: 100%; text-align: left; background: transparent; border-width: 0 0 1px; border-style: solid; border-color: var(--hair); cursor: pointer; }
+.ov button.orow:hover { background: var(--wash); }
+.ov button.orow[aria-current="true"] { background: var(--wash); box-shadow: inset 3px 0 0 var(--s1); }
+.ov .spk { display: flex; flex-direction: column; gap: 6px; font-size: .88rem; }
+.ov .spk p { margin: 0; padding: 8px 12px; background: var(--wash); border-radius: 10px; }
+.ov .bkd { display: grid; grid-template-columns: minmax(8rem, 1.2fr) minmax(0, 2fr) minmax(5rem, auto) minmax(4.5rem, auto); gap: 4px 12px; align-items: center; }
+.ov .bkd .h { font-size: .76rem; color: var(--muted); font-weight: 700; }
+.ov .bkd .nm { font-weight: 700; font-size: .9rem; } .ov .bkd .nm small { display: block; font-weight: 400; color: var(--ink2); font-size: .76rem; }
+.ov .bkd .vl small { display: block; font-family: var(--sans); color: var(--muted); font-size: .74rem; }
+.ov .bkd .vl { text-align: right; font-family: var(--num); font-variant-numeric: tabular-nums; }
+.ov .bkd .bar2 { height: 12px; background: var(--grid); border-radius: 6px; overflow: hidden; } .ov .bkd .bar2 i { display: block; height: 100%; border-radius: 6px; }
+.ov .bkd .s1 { background: var(--s1); } .ov .bkd .s2 { background: var(--s2); } .ov .bkd .s3 { background: var(--s3); } .ov .bkd .s4 { background: var(--hero-mint); }
+@media (max-width: 600px) { .ov .bkd { grid-template-columns: minmax(0, 1fr) auto auto; } .ov .bkd .bar2 { display: none; } .ov .orow { grid-template-columns: minmax(0, 1fr) 5rem; } .ov .orow .bar2 { display: none; } }
+.pace { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 760px) { .pace { grid-template-columns: 1fr; } }
+.pace > div { background: var(--wash); border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; }
+.pace h3 { margin: 0; font-size: .92rem; }
+.pace .big { font-family: var(--num); font-size: 1.4rem; font-weight: 600; }
+.pace p { margin: 0; font-size: .86rem; color: var(--ink2); }
+.pace .meter { height: 10px; background: var(--grid); border-radius: 5px; overflow: hidden; } .pace .meter i { display: block; height: 100%; background: var(--good); }
+.pace .meter i.warn { background: var(--warn-ic); } .pace .meter i.crit { background: var(--crit-ic); }
+.flag { display: inline-flex; align-items: center; gap: 4px; font-size: .72rem; font-weight: 700; line-height: 1.6; padding: 0 8px; border-radius: 999px; border: 1px solid var(--hair-strong); color: var(--ink); vertical-align: middle; white-space: nowrap; }
+.flag .fi { font-size: .62rem; }
+.flag.warn { background: rgba(224, 162, 31, .18); border-color: var(--warn-ic); }
+.flag.crit { background: rgba(208, 59, 59, .14); border-color: var(--crit-ic); }
+.flag.ok { background: rgba(31, 157, 107, .14); border-color: var(--good); }
+.btn.sm { height: 28px; padding: 0 12px; font-size: .8rem; }
+.hv-top { display: flex; flex-direction: column; gap: 2px; }
+.hv-t { margin: 0; font-weight: 700; font-size: 1.05rem; line-height: 1.5; }
+.hv-s { margin: 0; color: var(--ink2); font-size: .9rem; }
+.hv-l { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.hv-l li { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; justify-content: space-between; padding: 6px 10px; background: var(--wash); border-radius: 8px; font-size: .86rem; }
+.hv-l li > span { min-width: 0; overflow-wrap: anywhere; }
+.ovb { display: flex; flex-direction: column; gap: 8px; padding-top: 12px; border-top: 1px solid var(--hair); }
+.ovb:first-child { border-top: 0; padding-top: 0; }
+.ovb h3 { margin: 0; font-size: .94rem; }
+.prt input { width: 5.4rem; text-align: right; padding: 4px 6px; border: 1px solid var(--hair-strong); border-radius: 6px; background: var(--surface); font-family: var(--num); }
+.prt td, .prt th { white-space: nowrap; }
+.prt tr.used td:first-child { font-weight: 700; }
+.prrow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+.ov .bkd .h.r { text-align: right; }
+.ovfx { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+table.cmp { width: 100%; }
+.ov .note2 { display: block; }
+.ov .note2 .flag { margin-right: 4px; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 
@@ -339,10 +409,12 @@ tr:last-child td { border-bottom: 0; }
       <div><h1>Token Ledger</h1><p>Claude Code の使い過ぎを見つけて、減らす</p></div>
     </div>
     <div id="drop" class="drop">
-      <div class="msg">会話記録(.jsonl)をここにドロップ</div>
+      <div class="msg">会話記録(.jsonl)を、1 つでも複数でも、ここにドロップ</div>
       <button id="pick" class="btn primary" type="button">ファイルを選ぶ</button>
+      <button id="pickDir" class="btn" type="button">フォルダを選ぶ</button>
       <button id="sampleBtn" class="btn" type="button">サンプルに戻す</button>
-      <input id="file" type="file" accept=".jsonl,.json,.txt,application/json,text/plain" hidden>
+      <input id="file" type="file" accept=".jsonl,.json,.txt,application/json,text/plain" multiple hidden>
+      <input id="dir" type="file" webkitdirectory multiple hidden>
     </div>
   </header>
 
@@ -358,6 +430,61 @@ tr:last-child td { border-bottom: 0; }
   </div>
 
   <div id="main" class="wrap" style="gap:20px">
+    <section id="ov" class="ov" aria-labelledby="hOv">
+      <div class="sechead"><h2 id="hOv" class="h-big">全体の概要</h2><p id="ovSub" class="sub"></p></div>
+      <dl id="ovKpis" class="kpis4"></dl>
+      <div class="ovfx"><span class="flab">金額の換算</span><label class="chk" for="fx">1 ドル =<input id="fx" class="num" type="number" min="1" step="any" value="150" style="width:5.5rem"> 円</label><label class="chk" for="umai">うまい棒 1 本 =<input id="umai" class="num" type="number" min="1" step="any" value="10" style="width:5rem"> 円</label><span class="cap">為替は日々変わるため、お好みで変えてください。</span></div>
+
+      <div class="card">
+        <div class="sechead"><h2>トークンの内訳と、推定コスト</h2><p class="sub">入力・出力・キャッシュ(使い回し)の読み取りと書き込みに分けた数です。コストは、モデルごとの公開単価で換算した目安です。</p></div>
+        <div id="ovBreak"></div>
+        <p id="ovCostNote" class="note2"></p>
+      </div>
+
+      <div class="card">
+        <div class="sechead"><h2 id="hPrice">コストの単価表</h2><p class="sub">100 万トークンあたりの金額(ドル)です。数字を直接書き換えると、上のコストがすぐ計算し直されます。</p></div>
+        <div class="tablebox" style="max-height:none"><table id="prTable" class="prt"></table></div>
+        <div class="prrow"><button id="prReset" class="btn sm" type="button">公式の単価に戻す</button><span class="cap">初期値は、公式の料金ページの値(2026-10-12 に確認)です。「使用中」は、読み込んだ記録に出てきたモデルです。値上げや割引があれば書き換えてください。</span></div>
+      </div>
+
+      <div class="card">
+        <div class="sechead"><h2 id="hTrend">期間別の推移</h2><p class="sub">日別・週別の消費です。ふだんの 2 倍以上に増えた日には ▲ を付けています。</p></div>
+        <div class="filters">
+          <div class="fgroup"><span class="flab">区切り</span>
+            <div id="ovGran" class="seg" role="group" aria-label="区切り"><button type="button" data-v="day" aria-pressed="true">日別</button><button type="button" data-v="week" aria-pressed="false">週別</button></div>
+          </div>
+          <div class="fgroup"><span class="flab">測り方</span>
+            <div id="ovMetric" class="seg" role="group" aria-label="測り方"><button type="button" data-v="cost" aria-pressed="true">推定コスト</button><button type="button" data-v="fresh" aria-pressed="false">使い回しを除く</button><button type="button" data-v="all" aria-pressed="false">すべて</button></div>
+          </div>
+        </div>
+        <div id="ovChart" class="plot ovplot" role="img"></div>
+        <div id="ovSpikes"></div>
+        <details class="twin"><summary>表で見る</summary><div class="tablebox"><table id="ovTrendTable"></table></div></details>
+      </div>
+
+      <div class="card">
+          <div class="sechead"><h2 id="hModel">モデル別の使用量</h2><p class="sub">Opus・Sonnet・Haiku などの内訳です。</p></div>
+          <div id="ovModel" class="rows"></div>
+          <details class="twin"><summary>表で見る</summary><div class="tablebox"><table id="ovModelTable"></table></div></details>
+        </div>
+
+      <div class="card">
+        <div class="sechead"><h2 id="hEff">トークンあたりの成果</h2><p class="sub">コミット 1 回や依頼 1 件あたりの消費量です。効率のよい使い方と、そうでない使い方が見分けられます。</p></div>
+        <div id="ovEff"></div>
+      </div>
+
+      <div class="card">
+        <div class="sechead"><h2 id="hLight">軽いモデルで足りたはずの依頼</h2><p class="sub">重いモデルで動かしたが、やり取りが少なく大きな編集もなかった依頼の候補です。</p></div>
+        <div id="ovLight"></div>
+      </div>
+
+      </section>
+
+    <section class="detailhead" aria-labelledby="hDet">
+      <h2 id="hDet" class="h-big">ここから下は、1 つのセッションの詳しい分析</h2>
+      <div class="fgroup"><label class="flab" for="sessSel">見ているセッション</label><select id="sessSel"></select><button id="turnBtn" class="btn sm" type="button">ターンごとの内訳を表で見る</button></div>
+    </section>
+
     <div class="filters" role="group" aria-label="集計の条件">
       <div class="fgroup"><span class="flab">会話の長さの上限</span>
         <div id="winCtl" class="seg" role="group" aria-label="会話の長さの上限">
@@ -470,7 +597,7 @@ tr:last-child td { border-bottom: 0; }
       </ul></div>
     </section>
 
-    <section class="grid2" aria-label="使った場所">
+    <section class="grid2" style="grid-template-columns:minmax(0,1fr)" aria-label="使った場所">
       <div class="card" aria-labelledby="hTask">
         <div class="sechead">
           <h2 id="hTask">依頼ごとのトークン消費</h2>
@@ -480,15 +607,7 @@ tr:last-child td { border-bottom: 0; }
         <div id="tasks" class="rows" role="list"></div>
         <details class="twin"><summary>表で見る</summary><div class="tablebox"><table id="taskTable"></table></div></details>
       </div>
-      <div class="card" aria-labelledby="hTool">
-        <div class="sechead">
-          <h2 id="hTool">会話を長くしたもの(ツール別)</h2>
-          <p class="sub">ファイルの読み込みやコマンド実行などの結果は、そのまま会話に積まれます。次のやり取りで会話が長くなった分を、直前に使ったツールごとに合計しています(結果とその前後の文章を含みます)。</p>
-        </div>
-        <div id="tools" class="rows" role="list"></div>
-        <details class="twin"><summary>表で見る</summary><div class="tablebox"><table id="toolTable"></table></div></details>
-      </div>
-    </section>
+      </section>
 
     <section class="card" aria-labelledby="hCtx">
       <div class="sechead">
@@ -600,7 +719,7 @@ tr:last-child td { border-bottom: 0; }
   function parseSession(text) {
     var lines = text.split(/\r?\n/);
     var calls = [], byId = new Map(), tasks = [];
-    var cur = null, bad = 0, n = 0, pendingCompact = false, lastMain = null, errIds = new Set();
+    var cur = null, bad = 0, n = 0, pendingCompact = false, lastMain = null, errIds = new Set(), cwd = '', sid = '';
     function newTask(title) { cur = { id: tasks.length + 1, title: title }; tasks.push(cur); }
 
     for (var li = 0; li < lines.length; li++) {
@@ -611,6 +730,8 @@ tr:last-child td { border-bottom: 0; }
       try { o = JSON.parse(s); } catch (e) { bad++; continue; }
       if (!o || typeof o !== 'object') continue;
       var m = o.message, side = !!o.isSidechain;
+      if (!cwd && typeof o.cwd === 'string') cwd = o.cwd.slice(0, 300);
+      if (!sid && typeof o.sessionId === 'string') sid = o.sessionId.slice(0, 80);
 
       if (o.type === 'user' && m) {
         if (o.isCompactSummary) { if (!side) pendingCompact = true; continue; }
@@ -629,7 +750,7 @@ tr:last-child td { border-bottom: 0; }
         var c = byId.get(id);
         if (!c) {
           if (!cur) newTask('(依頼より前の呼び出し)');
-          c = { id: id, side: side, task: cur.id, tools: [], uses: [], toolIds: new Set(), in: 0, cw: 0, cr: 0, out: 0, afterCompact: false, model: typeof m.model === 'string' ? m.model.slice(0, 80) : '', ts: undefined, parent: side && lastMain ? lastMain.id : null };
+          c = { id: id, side: side, task: cur.id, tools: [], uses: [], toolIds: new Set(), in: 0, cw: 0, cr: 0, out: 0, cw1: 0, afterCompact: false, model: typeof m.model === 'string' ? m.model.slice(0, 80) : '', ts: undefined, parent: side && lastMain ? lastMain.id : null };
           if (!side && pendingCompact) { c.afterCompact = true; pendingCompact = false; }
           byId.set(id, c);
           calls.push(c);
@@ -643,6 +764,7 @@ tr:last-child td { border-bottom: 0; }
         c.cw = Math.max(c.cw, num(u.cache_creation_input_tokens));
         c.cr = Math.max(c.cr, num(u.cache_read_input_tokens));
         c.out = Math.max(c.out, num(u.output_tokens));
+        if (u.cache_creation && typeof u.cache_creation === 'object') c.cw1 = Math.max(c.cw1, num(u.cache_creation.ephemeral_1h_input_tokens));
         if (Array.isArray(m.content)) {
           for (var k = 0; k < m.content.length; k++) {
             var b = m.content[k];
@@ -660,7 +782,7 @@ tr:last-child td { border-bottom: 0; }
     }
     calls = calls.filter(function (c) { return c.in + c.cw + c.cr + c.out > 0; });
     if (!calls.length) throw new Error('トークン使用量(usage)を含む呼び出しが見つかりません。Claude Code のセッション記録(.jsonl)か確認してください。');
-    return { calls: calls, tasks: tasks, bad: bad, lines: n, errIds: errIds };
+    return { calls: calls, tasks: tasks, bad: bad, lines: n, errIds: errIds, cwd: cwd, sessionId: sid };
   }
 
   /* ---------- analysis (everything is counted in tokens) ---------- */
@@ -1675,7 +1797,310 @@ tr:last-child td { border-bottom: 0; }
     return { text: lines.join('\n'), truth: truth };
   }
 
-  var api = { parseSession: parseSession, analyze: analyze, makeSample: makeSample, compact: compact, full: full, clip: clip, pct1: pct1, dur: dur, NO_TOOL: NO_TOOL, toolJa: toolJa, TTL_MS: TTL_MS };
+  /* ================= overview: many sessions at once (period, cost, where, why, pace) ================= */
+  // USD per 1M tokens: [input, 5-min cache write, 1-hour cache write, cache read, output]. Source: the pricing page of Claude's documentation (checked 2026-10-12).
+  var PR_OPUS5 = [5, 6.25, 10, 0.5, 25], PR_SON4 = [3, 3.75, 6, 0.3, 15], PR_FAB = [10, 12.5, 20, 0.25, 50], PR_FAB5 = [10, 12.5, 20, 1, 50];
+  var PRICES = {
+    'fable-5.1': PR_FAB, 'mythos-5.1': PR_FAB, 'fable-5': PR_FAB5, 'mythos-5': PR_FAB5,
+    'opus-5.5': [4, 5, 8, 0.2, 20], 'opus-5': PR_OPUS5, 'opus-4.8': PR_OPUS5, 'opus-4.7': PR_OPUS5, 'opus-4.6': PR_OPUS5, 'opus-4.5': PR_OPUS5,
+    'opus-4.1': [15, 18.75, 30, 1.5, 75], 'opus-4': [15, 18.75, 30, 1.5, 75],
+    'sonnet-5.5': [2, 2.5, 4, 0.1, 10], 'sonnet-5': [2, 2.5, 4, 0.2, 10], 'sonnet-4.6': PR_SON4, 'sonnet-4.5': PR_SON4, 'sonnet-4': PR_SON4,
+    'haiku-5.5': [0.1, 0.125, 0.2, 0.01, 0.5], 'haiku-4.5': [1, 1.25, 2, 0.1, 5], 'haiku-3.5': [0.8, 1, 1.6, 0.08, 4]
+  };
+  PRICES['haiku-5.5-long'] = [0.5, 0.625, 1, 0.05, 2.5];
+  var PRICES_DEFAULT = JSON.parse(JSON.stringify(PRICES));
+  function getPrices() { return JSON.parse(JSON.stringify(PRICES)); }
+  function setPrice(key, i, v) { if (PRICES[key] && i >= 0 && i < 5 && typeof v === 'number' && isFinite(v) && v >= 0 && v < 1e6) PRICES[key][i] = v; }
+  function resetPrices() { Object.keys(PRICES_DEFAULT).forEach(function (k) { PRICES[k] = PRICES_DEFAULT[k].slice(); }); }
+  var LK = '';
+  var FAM_LATEST = { opus: 'opus-5.5', sonnet: 'sonnet-5.5', haiku: 'haiku-5.5', fable: 'fable-5.1', mythos: 'mythos-5.1' };
+  var FAM_JA = { opus: 'Opus', sonnet: 'Sonnet', haiku: 'Haiku', fable: 'Fable', mythos: 'Mythos' };
+  var modelCache = {};
+  // -> { key, name, fam, exact }  or null when the id is not a Claude model name
+  function modelKey(model) {
+    model = String(model || '');
+    if (modelCache[model] !== undefined) return modelCache[model];
+    var r = null, fam, ver;
+    var m = /(opus|sonnet|haiku|fable|mythos)-(\d+)(?:-(\d{1,2})(?!\d))?/i.exec(model);
+    var o = /claude-(\d+)(?:-(\d{1,2})(?!\d))?-(opus|sonnet|haiku)/i.exec(model);
+    if (m) { fam = m[1].toLowerCase(); ver = m[2] + (m[3] !== undefined ? '.' + m[3] : ''); }
+    else if (o) { fam = o[3].toLowerCase(); ver = o[1] + (o[2] !== undefined ? '.' + o[2] : ''); }
+    else { var f2 = /(opus|sonnet|haiku|fable|mythos)/i.exec(model); if (f2) { fam = f2[1].toLowerCase(); ver = ''; } }
+    if (fam) {
+      var key = fam + '-' + ver, exact = !!PRICES[key];
+      if (!exact) key = FAM_LATEST[fam];
+      r = { key: key, name: FAM_JA[fam] + (ver ? ' ' + ver : ''), fam: fam, exact: exact };
+    }
+    modelCache[model] = r;
+    return r;
+  }
+  function callCost(c, forceKey) {
+    var mk = modelKey(c.model), key = forceKey || (mk ? mk.key : 'sonnet-5.5');
+    if (key === 'haiku-5.5' && c.in + c.cw + c.cr > 100000) key = 'haiku-5.5-long';
+    LK = key;
+    var pr = PRICES[key];
+    var w1 = Math.min(c.cw, c.cw1 || 0), w5 = c.cw - w1;
+    LP = [c.in * pr[0] / 1e6, (w5 * pr[1] + w1 * pr[2]) / 1e6, c.cr * pr[3] / 1e6, c.out * pr[4] / 1e6];
+    return { cost: LP[0] + LP[1] + LP[2] + LP[3], exact: !!(mk && mk.exact) };
+  }
+  function dayKey(ts) { var d = new Date(ts); return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate(); }
+  function dayStart(ts) { var d = new Date(ts); return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime(); }
+  function weekStart(ts) { var d = new Date(dayStart(ts)); var wd = (d.getDay() + 6) % 7; return new Date(d.getFullYear(), d.getMonth(), d.getDate() - wd).getTime(); }
+  var METRICS = ['cost', 'fresh', 'all'];
+  function zero() { return { in: 0, cw: 0, cr: 0, out: 0, all: 0, fresh: 0, cost: 0, calls: 0, k0: 0, k1: 0, k2: 0, k3: 0 }; }
+  var LP = [0, 0, 0, 0]; // cost parts of the call that was just priced: input, cache write, cache read, output
+  function addTo(b, c, cc) {
+    b.in += c.in; b.cw += c.cw; b.cr += c.cr; b.out += c.out;
+    b.all += c.in + c.cw + c.cr + c.out; b.fresh += c.in + c.cw + c.out; b.cost += cc; b.calls++;
+    b.k0 += LP[0]; b.k1 += LP[1]; b.k2 += LP[2]; b.k3 += LP[3];
+  }
+  function median(a) { if (!a.length) return 0; var s = a.slice().sort(function (x, y) { return x - y; }); var n = s.length; return n % 2 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2; }
+  function projectName(cwd, fallback) {
+    var p = String(cwd || fallback || '').replace(/\\/g, '/').replace(/\/+$/, '');
+    if (!p) return '(場所不明)';
+    var seg = p.split('/').filter(Boolean);
+    return seg.slice(-2).join('/') || p;
+  }
+
+  // sessions: [{ id, label, project?, P }]. Always counts everything (main conversation and sub-agents; cache reads included).
+  function overview(sessions) {
+    var T = zero(); T.main = 0; T.side = 0; T.approx = 0; T.untimed = 0;
+    var days = {}, models = {}, sess = [], projs = {}, tools = {}, bucket = [], subTop = [];
+    var sub = { launches: 0, calls: 0, all: 0, fresh: 0, cost: 0 };
+    var events = [], t0 = Infinity, t1 = -Infinity, dayBy = {}, usedK = {};
+    var EDIT = { Edit: 1, MultiEdit: 1, Write: 1, NotebookEdit: 1 }, HEAVY = { opus: 1, fable: 1, mythos: 1 };
+    var eff = { commits: 0, edits: 0, tasks: 0, sessionsWithCommit: 0 };
+    var waste = { sessions: [], all: 0, cost: 0 };
+    var retry = { errors: 0, retries: 0, dupReads: 0, dupCmds: 0, dupSessions: [] };
+    var fixed = { sum: 0, sumCost: 0, n: 0, tokens: 0, big: [], mcpIdle: [] };
+    var compact2 = { n: 0, pcts: [], rows: [], reread: 0 };
+    var ttl = { n: 0, tokens: 0, cost: 0, rows: [] };
+    var light = [];
+    for (var b0 = 0; b0 < 10; b0++) bucket.push({ n: 0, ctx: 0, fresh: 0 });
+
+    sessions.forEach(function (S, si) {
+      var calls = S.P.calls, ses = zero(), st0 = Infinity, st1 = -Infinity, mainList = [], parentGrp = {};
+      ses.main = 0;
+      calls.forEach(function (c) {
+        var cc = callCost(c);
+        usedK[LK] = 1;
+        if (!cc.exact) T.approx++;
+        addTo(T, c, cc.cost); addTo(ses, c, cc.cost);
+        if (c.side) T.side++; else { T.main++; ses.main++; mainList.push(c); }
+        var mk = modelKey(c.model), mname = mk ? mk.name : (c.model ? clip(c.model, 24) : '(モデル不明)');
+        var md = models[mname] || (models[mname] = zero()); addTo(md, c, cc.cost); md.exact = mk ? mk.exact : false; md.fam = mk ? mk.fam : '';
+        if (c.ts !== undefined) {
+          if (c.ts < st0) st0 = c.ts; if (c.ts > st1) st1 = c.ts;
+          if (c.ts < t0) t0 = c.ts; if (c.ts > t1) t1 = c.ts;
+          var dk = dayKey(c.ts), dd = days[dk] || (days[dk] = Object.assign(zero(), { t: dayStart(c.ts) }));
+          addTo(dd, c, cc.cost);
+          var dsb = dayBy[dk] || (dayBy[dk] = {}), dsx = dsb[si] || (dsb[si] = zero()); addTo(dsx, c, cc.cost);
+          events.push({ ts: c.ts, all: c.in + c.cw + c.cr + c.out, fresh: c.in + c.cw + c.out, cost: cc.cost });
+        } else T.untimed++;
+        if (c.side) { sub.calls++; sub.all += c.in + c.cw + c.cr + c.out; sub.fresh += c.in + c.cw + c.out; sub.cost += cc.cost; if (c.parent) parentGrp[c.parent] = (parentGrp[c.parent] || 0) + c.in + c.cw + c.cr + c.out; }
+      });
+      // which tools made the conversation longer (same idea as the per-session analysis, kept light)
+      for (var i = 0; i < mainList.length; i++) {
+        var c0 = mainList[i], ctx0 = c0.in + c0.cw + c0.cr;
+        c0.uses.forEach(function (u) { var g = tools[u.name] || (tools[u.name] = { n: 0, grow: 0, max: 0 }); g.n++; });
+        var bi = Math.min(9, Math.floor(i / 10)); bucket[bi].n++; bucket[bi].ctx += ctx0; bucket[bi].fresh += c0.in + c0.cw + c0.out;
+        var nx = mainList[i + 1];
+        if (!nx || nx.afterCompact || !c0.uses.length) continue;
+        var dl = nx.in + nx.cw + nx.cr - ctx0;
+        if (dl <= 0) continue;
+        var sh = dl / c0.uses.length;
+        c0.uses.forEach(function (u) { var g = tools[u.name]; g.grow += sh; if (sh > g.max) g.max = sh; });
+      }
+      // sub-agent launches and what each group of them cost
+      mainList.forEach(function (c0) {
+        var tk = c0.uses.filter(function (u) { return u.name === 'Task' || u.name === 'Agent'; });
+        if (!tk.length) return;
+        sub.launches += tk.length;
+        var tokens = parentGrp[c0.id] || 0;
+        subTop.push({ session: S.label, label: tk.map(function (u) { return clip(u.key || '(説明なし)', 40); }).join(' / '), launches: tk.length, all: tokens, callId: c0.id });
+      });
+      var cr0 = ses.in + ses.cw + ses.cr;
+      var proj = S.project || projectName(S.P.cwd, '');
+      var row = { idx: si, id: S.id, label: S.label, project: proj, calls: ses.calls, main: ses.main, in: ses.in, cw: ses.cw, cr: ses.cr, out: ses.out, all: ses.all, fresh: ses.fresh, cost: ses.cost, hit: cr0 ? ses.cr / cr0 : 0, t0: st0 === Infinity ? null : st0, t1: st1 === -Infinity ? null : st1, tasks: S.P.tasks.length };
+      sess.push(row);
+      // ---- outcome, waste, fixed cost, compaction timing, cache expiry, light-model candidates (per session)
+      var errIds = S.P.errIds || new Set(), uses = 0, errs = 0, commits = 0, edits = 0, seenK = {}, errK = {}, dupR = 0, dupC = 0, retr = 0, usedMcp = false;
+      mainList.forEach(function (c0) {
+        c0.uses.forEach(function (u) {
+          uses++;
+          if (EDIT[u.name]) edits++;
+          if (/^mcp__/.test(u.name)) usedMcp = true;
+          var failed = !!(u.id && errIds.has(u.id)), k = u.name + '|' + u.key;
+          if (failed) { errs++; errK[k] = 1; }
+          else if (u.name === 'Bash' && /\bgit\s+commit\b/.test(u.key)) commits++;
+          if (u.key && (u.name === 'Read' || u.name === 'Grep' || u.name === 'Glob' || u.name === 'Bash')) {
+            if (errK[k] && !failed) { retr++; delete errK[k]; }
+            else if (seenK[k] && !failed) { if (u.name === 'Bash') dupC++; else dupR++; }
+            seenK[k] = 1;
+          }
+        });
+      });
+      var baseCtx0 = mainList.length ? mainList[0].in + mainList[0].cw + mainList[0].cr : 0;
+      var mk0 = mainList.length ? modelKey(mainList[0].model) : null, prCr = (PRICES[mk0 ? mk0.key : 'sonnet-5.5'] || PRICES['sonnet-5.5'])[3];
+      row.commits = commits; row.edits = edits; row.errors = errs; row.uses = uses; row.base = baseCtx0; row.retries = retr; row.dupReads = dupR; row.dupCmds = dupC;
+      row.noOutcome = edits === 0 && commits === 0 && ses.calls >= 3;
+      row.errHeavy = uses >= 5 && errs / uses >= 0.3;
+      row.dur = st0 === Infinity ? null : st1 - st0;
+      eff.commits += commits; eff.edits += edits; eff.tasks += S.P.tasks.length; if (commits) eff.sessionsWithCommit++;
+      retry.errors += errs; retry.retries += retr; retry.dupReads += dupR; retry.dupCmds += dupC;
+      if (retr + dupR + dupC > 0) retry.dupSessions.push({ idx: si, label: S.label, retries: retr, dupReads: dupR, dupCmds: dupC });
+      if (row.noOutcome || row.errHeavy) { waste.sessions.push({ idx: si, label: S.label, why: row.errHeavy ? 'error' : 'none', all: ses.all, cost: ses.cost, errors: errs, uses: uses, dur: row.dur }); waste.all += ses.all; waste.cost += ses.cost; }
+      if (mainList.length) {
+        fixed.n++; fixed.sum += baseCtx0; fixed.tokens += baseCtx0 * mainList.length; fixed.sumCost += baseCtx0 * mainList.length * prCr / 1e6;
+        if (baseCtx0 >= 20000) fixed.big.push({ idx: si, label: S.label, base: baseCtx0, calls: mainList.length });
+        if (baseCtx0 >= 15000 && !usedMcp) fixed.mcpIdle.push({ idx: si, label: S.label, base: baseCtx0, est: baseCtx0 * 0.15 * mainList.length });
+      }
+      var pastR = {};
+      mainList.forEach(function (c0, i) {
+        if (c0.afterCompact && i > 0) {
+          var pc = mainList[i - 1], pcx = pc.in + pc.cw + pc.cr;
+          compact2.n++; compact2.pcts.push(pcx / 200000);
+          var rr0 = 0;
+          for (var j = i; j < Math.min(mainList.length, i + 5); j++) mainList[j].uses.forEach(function (u) { if (u.name === 'Read' && u.key && pastR[u.key]) rr0++; });
+          compact2.reread += rr0; compact2.rows.push({ idx: si, label: S.label, at: pcx, pct: pcx / 200000, reread: rr0 });
+        }
+        c0.uses.forEach(function (u) { if (u.name === 'Read' && u.key) pastR[u.key] = 1; });
+        // cache expiry: a long pause followed by most of the conversation being written to the cache again
+        var pv = mainList[i - 1];
+        if (pv && pv.ts !== undefined && c0.ts !== undefined && c0.ts - pv.ts >= TTL_MS) {
+          var pvx = pv.in + pv.cw + pv.cr;
+          if (!c0.afterCompact && c0.cw >= 0.5 * pvx && pvx > 2000) {
+            var lt = Math.min(c0.cw, pvx), mk1 = modelKey(c0.model), pp = PRICES[mk1 ? mk1.key : 'sonnet-5.5'];
+            var lc = lt * (pp[1] - pp[3]) / 1e6;
+            ttl.n++; ttl.tokens += lt; ttl.cost += lc; ttl.rows.push({ idx: si, label: S.label, gapMin: (c0.ts - pv.ts) / 60000, tokens: lt, cost: lc, ts: c0.ts });
+          }
+        }
+      });
+      // tasks that a lighter model could probably have handled
+      var byTask = {};
+      mainList.forEach(function (c0) { var g = byTask[c0.task] || (byTask[c0.task] = { calls: [], out: 0, edit: false, cost: 0, cheap: 0, fam: {} }); g.calls.push(c0); g.out += c0.out; c0.uses.forEach(function (u) { if (EDIT[u.name]) g.edit = true; }); g.cost += callCost(c0).cost; g.cheap += callCost(c0, 'sonnet-5.5').cost; var mk2 = modelKey(c0.model); if (mk2) g.fam[mk2.fam] = (g.fam[mk2.fam] || 0) + 1; });
+      S.P.tasks.forEach(function (t) {
+        var g = byTask[t.id]; if (!g) return;
+        var fams = Object.keys(g.fam).sort(function (a, b) { return g.fam[b] - g.fam[a]; });
+        if (!fams.length || !HEAVY[fams[0]] || g.calls.length > 12 || (g.edit && g.out >= 5000)) return;
+        var save = g.cost - g.cheap; if (save <= 0.005) return;
+        light.push({ idx: si, session: S.label, task: t.id, title: clip(t.title, 50), calls: g.calls.length, fam: FAM_JA[fams[0]], cost: g.cost, save: save, edit: g.edit, first: g.calls[0].id });
+      });
+
+      var pj = projs[proj] || (projs[proj] = Object.assign(zero(), { sessions: 0 })); pj.sessions++;
+      pj.in += ses.in; pj.cw += ses.cw; pj.cr += ses.cr; pj.out += ses.out; pj.all += ses.all; pj.fresh += ses.fresh; pj.cost += ses.cost; pj.calls += ses.calls;
+    });
+
+    // days (no gaps) and weeks
+    var dayList = [], weekMap = {}, weekList = [];
+    if (t0 !== Infinity) {
+      var cap = 0;
+      for (var d0 = dayStart(t0); d0 <= dayStart(t1) && cap < 4000; cap++) {
+        var dt = new Date(d0), key = dayKey(d0), dr = days[key] || Object.assign(zero(), { t: d0 });
+        dr.key = key; dayList.push(dr);
+        d0 = new Date(dt.getFullYear(), dt.getMonth(), dt.getDate() + 1).getTime();
+      }
+      dayList.forEach(function (dr) {
+        var ws = weekStart(dr.t), w = weekMap[ws] || (weekMap[ws] = Object.assign(zero(), { t: ws, key: dayKey(ws) }));
+        ['in', 'cw', 'cr', 'out', 'all', 'fresh', 'cost', 'calls'].forEach(function (k) { w[k] += dr[k]; });
+      });
+      weekList = Object.keys(weekMap).map(Number).sort(function (a, b) { return a - b; }).map(function (k) { return weekMap[k]; });
+    }
+    // spikes: a day far above the usual (twice the typical active day, and at least 5% of everything)
+    var spikes = {};
+    METRICS.forEach(function (mt) {
+      var vals = dayList.map(function (d) { return d[mt]; }).filter(function (v) { return v > 0; }), tot = T[mt], med = median(vals);
+      spikes[mt] = [];
+      if (vals.length < 3) return;
+      dayList.forEach(function (d) {
+        if (d[mt] >= 2 * med && d[mt] >= 0.05 * tot) {
+          var by = dayBy[d.key] || {}, best = -1, bv = 0;
+          Object.keys(by).forEach(function (k) { if (by[k][mt] > bv) { bv = by[k][mt]; best = +k; } });
+          spikes[mt].push({ key: d.key, t: d.t, value: d[mt], times: med ? d[mt] / med : 0, top: best >= 0 ? sess[best].label : '', topShare: d[mt] ? bv / d[mt] : 0, topIdx: best });
+        }
+      });
+      spikes[mt].sort(function (a, b) { return b.value - a.value; });
+    });
+
+    var toolList = Object.keys(tools).map(function (k) { var g = tools[k]; return { name: k, n: g.n, grow: g.grow, max: g.max, avg: g.n ? g.grow / g.n : 0 }; }).sort(function (a, b) { return b.grow - a.grow; });
+    var growTot = toolList.reduce(function (a, g) { return a + g.grow; }, 0) || 1;
+    toolList.forEach(function (g) { g.share = g.grow / growTot; });
+    subTop.sort(function (a, b) { return b.all - a.all; });
+    sub.share = T.all ? sub.all / T.all : 0; sub.avg = sub.launches ? sub.all / sub.launches : 0;
+    sub.top = subTop.slice(0, 8);
+    var modelList = Object.keys(models).map(function (k) { var m3 = models[k]; m3.name = k; return m3; }).sort(function (a, b) { return b.cost - a.cost || b.all - a.all; });
+    var projList = Object.keys(projs).map(function (k) { var p3 = projs[k]; p3.name = k; return p3; }).sort(function (a, b) { return b.cost - a.cost || b.all - a.all; });
+    sess.forEach(function (s2) { s2.share = T.all ? s2.all / T.all : 0; });
+    var cReads = T.in + T.cw + T.cr;
+    light.sort(function (a, b) { return b.save - a.save; });
+    var lightSave = light.reduce(function (a, x) { return a + x.save; }, 0);
+    var med = median(sess.map(function (x) { return x.cost; }));
+    sess.forEach(function (x) { x.heavy = sess.length >= 3 && med > 0 && x.cost >= 2 * med && x.cost >= 0.1 * T.cost; });
+    var cpcts = compact2.pcts.slice().sort(function (a, b) { return a - b; });
+    compact2.avg = cpcts.length ? cpcts.reduce(function (a, b) { return a + b; }, 0) / cpcts.length : 0; compact2.min = cpcts[0] || 0; compact2.max = cpcts[cpcts.length - 1] || 0;
+    compact2.rows.sort(function (a, b) { return b.pct - a.pct; }); compact2.rows = compact2.rows.slice(0, 8);
+    ttl.rows.sort(function (a, b) { return b.cost - a.cost; }); ttl.rows = ttl.rows.slice(0, 6);
+    fixed.avg = fixed.n ? fixed.sum / fixed.n : 0; fixed.share = T.all ? fixed.tokens / T.all : 0;
+    fixed.big.sort(function (a, b) { return b.base - a.base; }); fixed.mcpIdle.sort(function (a, b) { return b.est - a.est; });
+    waste.sessions.sort(function (a, b) { return b.cost - a.cost; });
+    retry.dupSessions.sort(function (a, b) { return (b.retries + b.dupReads + b.dupCmds) - (a.retries + a.dupReads + a.dupCmds); }); retry.dupSessions = retry.dupSessions.slice(0, 6);
+    return { eff: eff, waste: waste, retry: retry, fixed: fixed, compaction: compact2, ttl: ttl, light: light.slice(0, 10), lightN: light.length, lightSave: lightSave, heavy: null, totals: T, usedKeys: Object.keys(usedK), hit: cReads ? T.cr / cReads : 0, days: dayList, weeks: weekList, spikes: spikes, models: modelList, sessions: sess, projects: projList, tools: toolList,
+      sub: sub, ctxBuckets: bucket.map(function (b2, i) { return { from: i * 10 + 1, to: i === 9 ? null : i * 10 + 10, n: b2.n, ctx: b2.n ? b2.ctx / b2.n : 0, fresh: b2.n ? b2.fresh / b2.n : 0 }; }),
+      pace: null, t0: t0 === Infinity ? null : t0, t1: t1 === -Infinity ? null : t1 };
+  }
+
+
+  // Compare sessions that started before and on/after a date (the day the person changed something).
+  function compareAt(O, ts) {
+    function agg(list) {
+      var a = { n: 0, in: 0, cw: 0, cr: 0, out: 0, all: 0, fresh: 0, cost: 0, main: 0, tasks: 0, commits: 0 };
+      list.forEach(function (x) { a.n++; ['in', 'cw', 'cr', 'out', 'all', 'fresh', 'cost', 'main', 'tasks', 'commits'].forEach(function (k) { a[k] += x[k] || 0; }); });
+      var rd = a.in + a.cw + a.cr;
+      a.hit = rd ? a.cr / rd : 0; a.costPerSession = a.n ? a.cost / a.n : 0; a.allPerSession = a.n ? a.all / a.n : 0; a.costPerTask = a.tasks ? a.cost / a.tasks : 0; a.freshPerCall = a.main ? a.fresh / a.main : 0; a.costPerCommit = a.commits ? a.cost / a.commits : 0;
+      return a;
+    }
+    var timed = O.sessions.filter(function (x) { return x.t0 !== null; });
+    return { before: agg(timed.filter(function (x) { return x.t0 < ts; })), after: agg(timed.filter(function (x) { return x.t0 >= ts; })) };
+  }
+
+  // A small set of related sessions for the demo: the first one is the same session as makeSample().
+  function makeSampleSet() {
+    var base = makeSample().text.split('\n').map(function (l) { return JSON.parse(l); });
+    var DAY = 86400000;
+    var V = [
+      { name: 'ログイン改修', proj: 'work/web-app', day: 0, scale: 1, model: null },
+      { name: '初期セットアップ', proj: 'work/docs-site', day: -18, scale: 0.4, model: 'claude-haiku-4-5-20251001', noEdit: true },
+      { name: 'API の整理', proj: 'work/api-server', day: -15, scale: 0.8, model: 'claude-sonnet-4-5-20250929', errs: true },
+      { name: '決済まわり', proj: 'work/web-app', day: -10, scale: 1.2, model: 'claude-opus-4-5-20251101', commit: true },
+      { name: 'ドキュメント更新', proj: 'work/docs-site', day: -8, scale: 0.6, model: 'claude-sonnet-5-5' },
+      { name: 'API の改修', proj: 'work/api-server', day: -3, scale: 1.0, model: 'claude-sonnet-5-5', commit: true },
+      { name: '大きな移行作業', proj: 'work/web-app', day: -2, scale: 3.2, model: 'claude-opus-5-5', commit: true },
+      { name: '細かな修正', proj: 'work/docs-site', day: -1, scale: 0.7, model: 'claude-sonnet-5-5', commit: true }
+    ];
+    return V.map(function (v, k) {
+      var sid = 'sample-' + (k + 1);
+      var bashIds = {};
+      var text = base.map(function (o) {
+        var c = JSON.parse(JSON.stringify(o));
+        if (c.message && Array.isArray(c.message.content)) c.message.content.forEach(function (b) {
+          if (b && b.type === 'tool_use') {
+            if (v.noEdit && (b.name === 'Edit' || b.name === 'Write')) b.name = 'Read';
+            if (v.commit && b.name === 'Bash' && b.input && /^npm test/.test(String(b.input.command || ''))) b.input.command = 'git commit -m "update"';
+            if (b.name === 'Bash') bashIds[b.id] = 1;
+          }
+          if (v.errs && b && b.type === 'tool_result' && bashIds[b.tool_use_id]) b.is_error = true;
+        });
+        if (c.timestamp) c.timestamp = new Date(Date.parse(c.timestamp) + v.day * DAY + (k % 3) * 3600000).toISOString();
+        c.cwd = '/' + v.proj; c.sessionId = sid;
+        if (c.message && c.message.usage && v.scale !== 1) { ['input_tokens', 'cache_creation_input_tokens', 'cache_read_input_tokens', 'output_tokens'].forEach(function (f) { c.message.usage[f] = Math.round((c.message.usage[f] || 0) * v.scale); }); }
+        if (c.message && c.message.usage && v.model) c.message.model = v.model;
+        return JSON.stringify(c);
+      }).join('\n');
+      return { label: v.name, project: v.proj, text: text };
+    });
+  }
+
+  var api = { parseSession: parseSession, analyze: analyze, makeSample: makeSample, compact: compact, full: full, clip: clip, pct1: pct1, dur: dur, NO_TOOL: NO_TOOL, toolJa: toolJa, TTL_MS: TTL_MS, overview: overview, compareAt: compareAt, getPrices: getPrices, setPrice: setPrice, resetPrices: resetPrices, makeSampleSet: makeSampleSet, modelKey: modelKey, callCost: callCost, projectName: projectName };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.Ledger = api;
 })(typeof window !== 'undefined' ? window : this);
@@ -1690,9 +2115,9 @@ tr:last-child td { border-bottom: 0; }
   var esc = function (s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
   var cp = L.compact, fl = L.full, clip = L.clip;
   var pct = function (x) { return Math.round(x * 100) + '%'; };
-  var SAMPLE = 'サンプル(合成データ)';
+  
 
-  var state = { parsed: null, A: null, label: '', opt: { win: 200000, cr: true, side: true, axis: 'time' } };
+  var state = { sessions: [], cur: 0, OV: null, note: '', parsed: null, A: null, label: '', opt: { win: 200000, cr: true, side: true, axis: 'time' } };
 
   /* ---------- tooltip ---------- */
   var tip = $('#tip');
@@ -1729,25 +2154,75 @@ tr:last-child td { border-bottom: 0; }
       e.appendChild(h('span', '', msg));
     }
   }
+  function setSessions(list) {
+    state.sessions = list.map(function (x, i) { return { id: 's' + i, label: x.label, project: x.project || '', P: x.P }; });
+    state.OV = L.overview(state.sessions);
+    var sel = $('#sessSel'); sel.textContent = '';
+    state.sessions.forEach(function (S, i) { var t0 = state.OV.sessions[i].t0, o = h('option', '', clip(S.label, 50) + (t0 ? '(' + fmtDate(t0) + ')' : '')); o.value = String(i); sel.appendChild(o); });
+    renderOverview();
+    selectSession(0);
+  }
+  function selectSession(i) {
+    if (!state.sessions[i]) return;
+    state.cur = i; var S = state.sessions[i];
+    state.parsed = S.P; state.label = S.label; $('#sessSel').value = String(i);
+    recompute();
+  }
   function load(text, label) {
     var P;
     try { P = L.parseSession(text); } catch (e) { showErr(e.message); return false; }
     showErr('');
-    state.parsed = P; state.label = label;
-    recompute();
+    setSessions([{ label: label, P: P }]);
     return true;
   }
-  function readFile(f) {
-    if (!f) return;
-    if (f.size > 80e6) { showErr('ファイルが大きすぎます(80MB まで)。'); return; }
-    var r = new FileReader();
-    r.onload = function () { load(String(r.result), f.name); };
-    r.onerror = function () { showErr('ファイルを読めませんでした。'); };
-    r.readAsText(f);
+  function loadSample() {
+    var set = L.makeSampleSet();
+    showErr('');
+    setSessions(set.map(function (x) { return { label: x.label, project: x.project, P: L.parseSession(x.text) }; }));
+  }
+  function readText(f, cb) { var r = new FileReader(); r.onload = function () { cb(String(r.result)); }; r.onerror = function () { cb(null); }; r.readAsText(f); }
+  function loadFiles(fileList) {
+    var files = Array.prototype.slice.call(fileList || []).filter(function (f) { return /\.(jsonl|json|txt)$/i.test(f.name); }).slice(0, 3000);
+    if (!files.length) { showErr('読み込める記録ファイル(.jsonl)が見つかりません。'); return; }
+    var items = [], skipped = 0, total = 0, i = 0, st = $('#status');
+    function next() {
+      if (i >= files.length) return finish();
+      var f = files[i++];
+      st.textContent = '読み込み中… ' + i + ' / ' + files.length;
+      if (f.size > 80e6 || total + f.size > 800e6) { skipped++; return setTimeout(next, 0); }
+      total += f.size;
+      readText(f, function (t) { if (t === null) skipped++; else items.push({ name: f.name, path: f.webkitRelativePath || f.name, text: t }); setTimeout(next, 0); });
+    }
+    function finish() {
+      var groups = {}, order = [];
+      items.forEach(function (it) {
+        var mm = /"sessionId"\s*:\s*"([^"]{1,80})"/.exec(it.text.slice(0, 20000)), key = mm ? 'sid:' + mm[1] : 'file:' + it.path;
+        if (!groups[key]) { groups[key] = []; order.push(key); }
+        groups[key].push(it);
+      });
+      var list = [];
+      order.forEach(function (key) {
+        var g = groups[key].sort(function (a, b) { return (/(^|\/)subagents\//.test(a.path) ? 1 : 0) - (/(^|\/)subagents\//.test(b.path) ? 1 : 0); });
+        var P;
+        try { P = L.parseSession(g.map(function (x) { return x.text; }).join('\n')); } catch (e) { skipped += g.length; return; }
+        var dir = (g[0].path.split('/').slice(-2, -1)[0]) || '';
+        var first = P.tasks.length && P.tasks[0].title ? clip(P.tasks[0].title, 40) : g[0].name.replace(/\.[a-z]+$/i, '');
+        list.push({ label: first, project: L.projectName(P.cwd, dir), P: P });
+      });
+      items = null;
+      if (!list.length) { showErr('トークン使用量(usage)を含む記録が見つかりませんでした。Claude Code のセッション記録(.jsonl)か確認してください。'); return; }
+      list.sort(function (a, b) { var ta = a.P.calls[0] && a.P.calls[0].ts, tb = b.P.calls[0] && b.P.calls[0].ts; return (ta || 0) - (tb || 0); });
+      showErr(skipped ? '読めなかったファイルが ' + skipped + ' 個ありました(記録以外のファイル、または大きすぎるファイル)。' : '');
+      state.note = list.length + ' 個のセッション' + (skipped ? ' · 読めなかったファイル ' + skipped + ' 個' : '');
+      setSessions(list);
+    }
+    next();
   }
   $('#pick').addEventListener('click', function () { $('#file').click(); });
-  $('#file').addEventListener('change', function (e) { readFile(e.target.files[0]); e.target.value = ''; });
-  $('#sampleBtn').addEventListener('click', function () { load(L.makeSample().text, SAMPLE); });
+  $('#pickDir').addEventListener('click', function () { $('#dir').click(); });
+  $('#file').addEventListener('change', function (e) { loadFiles(e.target.files); e.target.value = ''; });
+  $('#dir').addEventListener('change', function (e) { loadFiles(e.target.files); e.target.value = ''; });
+  $('#sampleBtn').addEventListener('click', function () { loadSample(); });
   $('#pasteBtn').addEventListener('click', function () {
     var t = $('#paste').value;
     if (!t.trim()) { showErr('貼り付けるテキストが空です。'); return; }
@@ -1756,7 +2231,8 @@ tr:last-child td { border-bottom: 0; }
   var drop = $('#drop');
   ['dragenter', 'dragover'].forEach(function (n) { drop.addEventListener(n, function (e) { e.preventDefault(); drop.classList.add('over'); }); });
   ['dragleave', 'drop'].forEach(function (n) { drop.addEventListener(n, function (e) { e.preventDefault(); drop.classList.remove('over'); }); });
-  drop.addEventListener('drop', function (e) { var f = e.dataTransfer && e.dataTransfer.files[0]; readFile(f); });
+  drop.addEventListener('drop', function (e) { loadFiles(e.dataTransfer && e.dataTransfer.files); });
+
 
   /* ---------- filters ---------- */
   function bindSeg(id, attr, key, conv) {
@@ -1782,12 +2258,209 @@ tr:last-child td { border-bottom: 0; }
   function render() {
     var A = state.A, P = state.parsed;
     var st = $('#status'); st.textContent = '';
-    st.appendChild(h('span', '', '読み込み済み: ' + state.label));
+    st.appendChild(h('span', '', '読み込み済み: ' + (state.sessions.length > 1 ? state.sessions.length + ' 個のセッション(詳しく見ているのは「' + clip(state.label, 30) + '」)' : state.label)));
     st.appendChild(h('span', '', P.tasks.length + ' 依頼 · ' + P.calls.length + ' やり取り' + (P.bad ? ' · 読めない行 ' + P.bad : '')));
-    renderHero(A); renderRanking(A); renderBreakdown(A); renderGauge(A); renderKpis(A); renderFinds(A); renderOpps(A); renderTasks(A); syncAxis(A); drawCtx(); renderTools(A);
+    renderHero(A); renderRanking(A); renderBreakdown(A); renderGauge(A); renderKpis(A); renderFinds(A); renderOpps(A); renderTasks(A); syncAxis(A); drawCtx();
     tables(A);
   }
 
+
+
+  /* ---------- overview (many sessions) ---------- */
+  var FX = { yen: 150, umai: 10 };
+  var OVS = { gran: 'day', metric: 'cost', pm: 'cost', l5: '', l7: '', ba: '' };
+  var usd = function (v) { return v >= 100 ? '$' + Math.round(v).toLocaleString('en-US') : '$' + v.toFixed(2); };
+  var jpy = function (v) { return '¥' + Math.round(v * FX.yen).toLocaleString('ja-JP'); };
+  var umaiN = function (v) { var n = v * FX.yen / FX.umai; return n >= 100 ? Math.round(n).toLocaleString('ja-JP') : (n >= 10 ? n.toFixed(0) : n.toFixed(1)); };
+  var worth = function (v) { return '約 ' + jpy(v) + '・うまい棒 ' + umaiN(v) + ' 本分'; };
+  var fmtM = function (m, v) { return m === 'cost' ? usd(v) : cp(v); };
+  var WD = '日月火水木金土';
+  var fmtDate = function (ts) { var d = new Date(ts); return d.getFullYear() + '/' + (d.getMonth() + 1) + '/' + d.getDate(); };
+  var fmtDay = function (ts) { var d = new Date(ts); return (d.getMonth() + 1) + '/' + d.getDate() + '(' + WD.charAt(d.getDay()) + ')'; };
+  var MLAB = { cost: '推定コスト', fresh: '使い回しを除くトークン', all: 'すべてのトークン' };
+  function flag(kind, text) { var f = h('span', 'flag ' + kind); f.appendChild(h('span', 'fi', kind === 'crit' ? '●' : kind === 'ok' ? '✓' : '▲')); f.appendChild(document.createTextNode(text)); return f; }
+  function mkRow(tag, nm, small, frac, val, flags) {
+    var r = h(tag, 'orow'); if (tag === 'button') r.type = 'button';
+    var n = h('span', 'nm'); n.appendChild(document.createTextNode(nm));
+    (flags || []).forEach(function (f) { n.appendChild(document.createTextNode(' ')); n.appendChild(f); });
+    if (small) n.appendChild(h('small', '', small));
+    r.appendChild(n);
+    var b = h('span', 'bar2'), i = h('i'); i.style.width = Math.max(2, Math.min(100, frac * 100)) + '%'; b.appendChild(i); r.appendChild(b);
+    r.appendChild(h('span', 'vl', val));
+    return r;
+  }
+  function noteBox(parts, cls) { var p = h('p', cls || 'note2'); parts.forEach(function (x) { if (typeof x === 'string') p.appendChild(document.createTextNode(x)); else if (x.b !== undefined) p.appendChild(h('b', '', x.b)); else p.appendChild(x); }); return p; }
+  function openBtn(idx, label) { var b = h('button', 'btn sm', label || 'このセッションを詳しく見る'); b.type = 'button'; b.addEventListener('click', function () { selectSession(idx); var el = $('#hDet'); if (el) el.scrollIntoView({ block: 'start', behavior: 'smooth' }); }); return b; }
+  function box(id) { var e = $(id); e.textContent = ''; return e; }
+
+  function renderOverview() {
+    var O = state.OV; if (!O) return;
+    var T = O.totals, m = OVS.metric;
+    $('#ovSub').textContent = O.sessions.length + ' 個のセッション' + (O.t0 ? ' · ' + fmtDate(O.t0) + ' 〜 ' + fmtDate(O.t1) + '(' + O.days.length + ' 日間)' : '') + ' · 使い回し分と、サブエージェントの分も含めた全体の数字です。';
+    // KPIs
+    var k = box('#ovKpis');
+    [
+      ['合計トークン', cp(T.all), '使い回しを除くと ' + cp(T.fresh)],
+      ['推定コスト', usd(T.cost), worth(T.cost)],
+      ['使い回し(キャッシュ)の率', pct(O.hit), O.hit < 0.6 ? '低めです。会話の送り直しが多い可能性' : (O.hit >= 0.8 ? '高く、良い状態です' : 'ふつうの範囲です')],
+      ['やり取りの回数', fl(T.main), 'メイン ' + fl(T.main) + ' 回 + サブエージェント ' + fl(T.side) + ' 回']
+    ].forEach(function (x, i) {
+      var d = h('div'); d.appendChild(h('dt', '', x[0])); var dd = h('dd'); dd.appendChild(h('span', 'v', x[1])); dd.appendChild(h('span', 'd', x[2]));
+      if (i === 2 && O.hit < 0.6) { var wf = flag('warn', '要確認'); wf.style.alignSelf = 'flex-start'; dd.appendChild(wf); }
+      d.appendChild(dd); k.appendChild(d);
+    });
+    // breakdown with cost
+    var bk = box('#ovBreak'), parts = [
+      { cls: 's1', name: '入力(新しく送った分)', ds: 'あなたの指示や、新しく読み込んだファイル・コマンド結果', v: T.in, c: T.k0 },
+      { cls: 's2', name: 'キャッシュ書き込み', ds: '会話を使い回せるように保存した分(単価は入力より少し高い)', v: T.cw, c: T.k1 },
+      { cls: 's4', name: 'キャッシュ読み取り', ds: '保存済みの会話を読み直した分(単価はとても安い)', v: T.cr, c: T.k2 },
+      { cls: 's3', name: '出力(Claude の返答)', ds: 'Claude が書いた文章やコード(単価は最も高い)', v: T.out, c: T.k3 }
+    ];
+    var gr = h('div', 'bkd');
+    ['種類', 'トークンの割合', 'トークン', '推定コスト'].forEach(function (t, i) { gr.appendChild(h('div', 'h' + (i > 1 ? ' r' : ''), t)); });
+    parts.forEach(function (p) {
+      var nm = h('div', 'nm', p.name); nm.appendChild(h('small', '', p.ds)); gr.appendChild(nm);
+      var b = h('div', 'bar2'), i = h('i', p.cls); i.style.width = Math.max(1, (T.all ? p.v / T.all : 0) * 100) + '%'; b.appendChild(i); gr.appendChild(b);
+      var v1 = h('div', 'vl', cp(p.v)); v1.appendChild(h('small', '', pct(T.all ? p.v / T.all : 0))); gr.appendChild(v1);
+      var v2 = h('div', 'vl', usd(p.c)); v2.appendChild(h('small', '', pct(T.cost ? p.c / T.cost : 0))); gr.appendChild(v2);
+    });
+    bk.appendChild(gr);
+    var cn = $('#ovCostNote');
+    cn.textContent = 'コストは、各モデルの公開単価(1 ドル=' + FX.yen + ' 円で換算)にそのまま当てはめた目安です。定額プランでは、この金額が請求されるわけではありません。' + (T.approx ? '単価が分からないモデルは近いモデルで換算しました(' + T.approx + ' 回)。' : '');
+    renderTrend(O); renderLists(O); renderEff(O); renderLight(O); renderPrices(O);
+  }
+
+  /* trend chart */
+  function niceMax(v) { if (!(v > 0)) return 1; var p = Math.pow(10, Math.floor(Math.log(v) / Math.LN10)), f = v / p; return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * p; }
+  function spikeKeys(list, m, total, premade) {
+    var set = {};
+    if (premade) { premade.forEach(function (s) { set[s.key] = 1; }); return set; }
+    var vals = list.map(function (d) { return d[m]; }).filter(function (v) { return v > 0; }), srt = vals.slice().sort(function (a, c) { return a - c; });
+    var med = srt.length ? (srt.length % 2 ? srt[(srt.length - 1) / 2] : (srt[srt.length / 2 - 1] + srt[srt.length / 2]) / 2) : 0;
+    if (vals.length < 3) return set;
+    list.forEach(function (d) { if (d[m] >= 2 * med && d[m] >= 0.05 * total) set[d.key] = 1; });
+    return set;
+  }
+  function renderTrend(O) {
+    var m = OVS.metric, day = OVS.gran === 'day';
+    var all = day ? O.days : O.weeks, list = all.slice(day ? -90 : -26), T = O.totals;
+    var sp = spikeKeys(all, m, T[m], day ? O.spikes[m] : null);
+    var el = $('#ovChart'), W = Math.max(300, Math.floor(el.clientWidth) || 600), H = 260, ml = 54, mr = 8, mt = 16, mb = 30;
+    var pw = W - ml - mr, ph = H - mt - mb, vmax = 0;
+    list.forEach(function (d) { if (d[m] > vmax) vmax = d[m]; });
+    var top = niceMax(vmax), n = Math.max(1, list.length), bw = pw / n;
+    var s = '<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" aria-hidden="true">';
+    [0, 0.5, 1].forEach(function (f) { var y = mt + ph - f * ph; s += '<line class="g" x1="' + ml + '" x2="' + (W - mr) + '" y1="' + y + '" y2="' + y + '"/><text x="' + (ml - 6) + '" y="' + (y + 4) + '" text-anchor="end">' + fmtM(m, top * f) + '</text>'; });
+    var every = Math.max(1, Math.ceil(n / Math.max(3, Math.floor(pw / 62))));
+    list.forEach(function (d, i) {
+      var hgt = top ? d[m] / top * ph : 0, x = ml + i * bw + bw * 0.15, w = Math.max(1, bw * 0.7), y = mt + ph - hgt, isS = !!sp[d.key];
+      s += '<rect class="bar' + (isS ? ' sp' : '') + '" x="' + x + '" y="' + y + '" width="' + w + '" height="' + Math.max(d[m] > 0 ? 1 : 0, hgt) + '"><title>' + fmtDay(d.t) + (day ? '' : ' からの 1 週間') + ': ' + fmtM(m, d[m]) + (isS ? '(ふだんの 2 倍以上)' : '') + '</title></rect>';
+      if (isS) s += '<text class="mk" x="' + (x + w / 2) + '" y="' + (y - 4) + '" text-anchor="middle">▲</text>';
+      if (i % every === 0) s += '<text x="' + (x + w / 2) + '" y="' + (H - 10) + '" text-anchor="middle">' + fmtDay(d.t).replace(/\(.\)/, '') + '</text>';
+    });
+    s += '<line class="b" x1="' + ml + '" x2="' + (W - mr) + '" y1="' + (mt + ph) + '" y2="' + (mt + ph) + '"/></svg>';
+    el.innerHTML = s;
+    el.setAttribute('aria-label', (day ? '日別' : '週別') + 'の' + MLAB[m] + '。最大 ' + fmtM(m, vmax) + '。');
+    // spikes
+    var sb = box('#ovSpikes'), sps = (O.spikes[m] || []).slice(0, 4);
+    if (day && sps.length) {
+      var wrap = h('div', 'spk');
+      sps.forEach(function (x) {
+        var p = h('p'); p.appendChild(flag('warn', '急増')); p.appendChild(document.createTextNode(' ' + fmtDay(x.t) + ' は ' + fmtM(m, x.value) + '。ふだんの約 ' + x.times.toFixed(1) + ' 倍です。' + (x.top ? 'この日の ' + pct(x.topShare) + ' は「' + clip(x.top, 30) + '」でした。' : '') + ' '));
+        if (x.topIdx >= 0) p.appendChild(openBtn(x.topIdx, '詳しく見る'));
+        wrap.appendChild(p);
+      });
+      sb.appendChild(wrap);
+    } else sb.appendChild(h('p', 'cap', day ? 'ふだんの 2 倍を超える急増はありませんでした。' : '週別は、日別の急増の日を見てください。'));
+    fillTable($('#ovTrendTable'), ['日付', '入力', 'キャッシュ書き込み', 'キャッシュ読み取り', '出力', '合計', '推定コスト', '回数'],
+      all.slice().reverse().map(function (d) { return [fmtDate(d.t) + (day ? '' : ' の週'), fl(d.in), fl(d.cw), fl(d.cr), fl(d.out), fl(d.all), usd(d.cost), String(d.calls)]; }), [1, 2, 3, 4, 5, 6, 7], []);
+  }
+
+  function renderLists(O) {
+    var m = OVS.metric, T = O.totals;
+    var md = O.models.slice().sort(function (a, b) { return b[m] - a[m]; }), mm = md.length ? md[0][m] || 1 : 1, mb = box('#ovModel');
+    md.forEach(function (x) { mb.appendChild(mkRow('div', x.name, '呼び出し ' + x.calls + ' 回 · ' + pct(T.all ? x.all / T.all : 0) + '(トークン)' + (x.exact ? '' : ' · 単価は近いモデルで換算'), x[m] / mm, fmtM(m, x[m]))); });
+    fillTable($('#ovModelTable'), ['モデル', '回数', '入力', 'キャッシュ書き込み', 'キャッシュ読み取り', '出力', '合計', 'コスト'], md.map(function (x) { return [x.name, String(x.calls), fl(x.in), fl(x.cw), fl(x.cr), fl(x.out), fl(x.all), usd(x.cost)]; }), [1, 2, 3, 4, 5, 6, 7], [0]);
+  }
+
+  /* editable price table (USD per million tokens) */
+  var PK = null, prTimer = null;
+  var PCOLS = ['入力', 'キャッシュ書き込み(5 分)', 'キャッシュ書き込み(1 時間)', 'キャッシュ読み取り', '出力'];
+  function priceLabel(key) {
+    if (key === 'haiku-5.5-long') return 'Haiku 5.5(入力が 100k を超える呼び出し)';
+    var p = key.split('-'); return p[0].charAt(0).toUpperCase() + p[0].slice(1) + ' ' + p.slice(1).join('.');
+  }
+  function recalcPrices() {
+    clearTimeout(prTimer);
+    prTimer = setTimeout(function () { if (state.sessions.length) { state.OV = L.overview(state.sessions); renderOverview(); } }, 250);
+  }
+  function renderPrices(O) {
+    var used = O.usedKeys || [], sig = used.join(',');
+    var tb = $('#prTable');
+    if (sig === PK && tb.firstChild) return;
+    PK = sig;
+    var P = L.getPrices(), keys = Object.keys(P);
+    keys.sort(function (a, b) { var ua = used.indexOf(a) >= 0 ? 0 : 1, ub = used.indexOf(b) >= 0 ? 0 : 1; return ua - ub; });
+    tb.textContent = '';
+    var th = h('thead'), hr = h('tr'); ['モデル'].concat(PCOLS).forEach(function (t, i) { var c = h('th', i ? 'n' : '', t); c.scope = 'col'; hr.appendChild(c); }); th.appendChild(hr); tb.appendChild(th);
+    var bd = h('tbody');
+    keys.forEach(function (key) {
+      var isUsed = used.indexOf(key) >= 0, tr = h('tr', isUsed ? 'used' : ''), c0 = h('td', '', priceLabel(key));
+      if (isUsed) { c0.appendChild(document.createTextNode(' ')); c0.appendChild(flag('ok', '使用中')); }
+      tr.appendChild(c0);
+      for (var i = 0; i < 5; i++) (function (i) {
+        var td = h('td', 'n'), inp = h('input'); inp.type = 'number'; inp.min = '0'; inp.step = 'any'; inp.inputMode = 'decimal'; inp.value = String(P[key][i]);
+        inp.setAttribute('aria-label', priceLabel(key) + ' ' + PCOLS[i] + '(ドル / 100 万トークン)');
+        inp.addEventListener('input', function () { var v = parseFloat(inp.value); if (isFinite(v) && v >= 0 && v < 1e6) { L.setPrice(key, i, v); recalcPrices(); } });
+        td.appendChild(inp); tr.appendChild(td);
+      })(i);
+      bd.appendChild(tr);
+    });
+    tb.appendChild(bd);
+  }
+  $('#prReset').addEventListener('click', function () { L.resetPrices(); PK = null; if (state.sessions.length) { state.OV = L.overview(state.sessions); renderOverview(); } });
+
+  function renderEff(O) {
+    var b = box('#ovEff'), E = O.eff, T = O.totals;
+    var g = h('div', 'pace');
+    var a = h('div'); a.appendChild(h('h3', '', 'コミット 1 回あたり'));
+    if (E.commits) { a.appendChild(h('span', 'big', usd(T.cost / E.commits))); a.appendChild(h('p', '', cp(T.all / E.commits) + ' トークン · コミット ' + E.commits + ' 回(' + E.sessionsWithCommit + ' セッション)'));  a.appendChild(h('p', '', worth(T.cost / E.commits))); }
+    else { a.appendChild(h('span', 'big', '—')); a.appendChild(h('p', '', '「git commit」の実行が見つかりませんでした。下の 1 依頼あたりで見てください。')); }
+    var c = h('div'); c.appendChild(h('h3', '', '依頼 1 件あたり'));
+    c.appendChild(h('span', 'big', E.tasks ? usd(T.cost / E.tasks) : '—')); c.appendChild(h('p', '', E.tasks ? cp(T.all / E.tasks) + ' トークン · 依頼 ' + E.tasks + ' 件 · ' + worth(T.cost / E.tasks) : ''));
+    g.appendChild(a); g.appendChild(c); b.appendChild(g);
+    var withC = O.sessions.filter(function (x) { return x.commits > 0; }).map(function (x) { return { x: x, per: x.cost / x.commits }; }).sort(function (p, q) { return q.per - p.per; });
+    if (withC.length) {
+      var med = withC.map(function (p) { return p.per; }).sort(function (p, q) { return p - q; })[Math.floor(withC.length / 2)] || 1, mx = withC[0].per || 1, rows = h('div', 'rows');
+      b.appendChild(h('p', 'cap', 'セッションごとの、コミット 1 回あたりのコスト(高い順)。効率のよい使い方は下のほうです:'));
+      withC.slice(0, 8).forEach(function (p) { rows.appendChild(mkRow('div', clip(p.x.label, 40), 'コミット ' + p.x.commits + ' 回 · ' + usd(p.x.cost), p.per / mx, usd(p.per), p.per >= 2 * med && withC.length >= 3 ? [flag('warn', '割高')] : [])); });
+      b.appendChild(rows);
+    }
+  }
+
+  function renderLight(O) {
+    var b = box('#ovLight');
+    if (!O.lightN) { b.appendChild(h('p', 'cap', '軽量モデルで足りそうな依頼は見つかりませんでした。')); return; }
+    b.appendChild(noteBox([{ b: O.lightN + ' 件' }, ' の依頼が、重いモデル(Opus など)で動いていましたが、やり取りが少なく大きな編集もありません。Sonnet 5.5 で動かしていれば、約 ' + usd(O.lightSave) + ' 安くなった計算です(' + worth(O.lightSave) + ')。あくまで候補です。']));
+    var rows = h('div', 'rows'), mx = O.light[0].save || 1;
+    O.light.forEach(function (x) { var r = mkRow('button', clip(x.title, 44), '「' + clip(x.session, 24) + '」依頼 #' + x.task + ' · ' + x.fam + ' · やり取り ' + x.calls + ' 回 · 実際 ' + usd(x.cost), x.save / mx, '−' + usd(x.save)); r.addEventListener('click', function () { selectSession(x.idx); var el = $('#hDet'); if (el) el.scrollIntoView({ block: 'start', behavior: 'smooth' }); }); rows.appendChild(r); });
+    b.appendChild(rows);
+  }
+
+  /* pace against the usage limits */
+  function bindOvSeg(id, key, after) {
+    $(id).addEventListener('click', function (e) {
+      var bt = e.target.closest('button'); if (!bt) return;
+      OVS[key] = bt.getAttribute('data-v');
+      var bs = $(id).querySelectorAll('button'); for (var i = 0; i < bs.length; i++) bs[i].setAttribute('aria-pressed', String(bs[i] === bt));
+      if (state.OV) renderOverview();
+    });
+  }
+  bindOvSeg('#ovGran', 'gran'); bindOvSeg('#ovMetric', 'metric');
+  $('#fx').addEventListener('input', function (e) { var v = parseFloat(e.target.value); if (v > 0 && v < 100000) { FX.yen = v; if (state.OV) renderOverview(); } });
+  $('#umai').addEventListener('input', function (e) { var v = parseFloat(e.target.value); if (v > 0 && v < 100000) { FX.umai = v; if (state.OV) renderOverview(); } });
+  $('#sessSel').addEventListener('change', function (e) { selectSession(Number(e.target.value) || 0); });
+  $('#turnBtn').addEventListener('click', function () { var d = $('#ctxTable').closest('details'); if (d) d.open = true; var el = $('#hCtx'); if (el) el.scrollIntoView({ block: 'start', behavior: 'smooth' }); });
 
 
   /* ---------- viewpoint ranking ---------- */
@@ -2269,41 +2942,14 @@ tr:last-child td { border-bottom: 0; }
       var w = Math.round(en[0].contentRect.width);
       if (w !== lastW) { lastW = w; if (state.A) drawCtx(); }
     }).observe($('#ctxChart'));
+    var lastOv = 0;
+    new ResizeObserver(function (en) {
+      var w2 = Math.round(en[0].contentRect.width);
+      if (w2 !== lastOv) { lastOv = w2; if (state.OV) renderTrend(state.OV); }
+    }).observe($('#ovChart'));
   }
 
   /* ----- chart 3: growth by tool ----- */
-  function renderTools(A) {
-    var top = A.tools.slice(0, 8), rest = A.tools.slice(8);
-    var rows = top.map(function (g) { return { name: g.name, growth: g.growth, share: g.share, uses: g.uses, avg: g.avg }; });
-    if (rest.length) {
-      var gs = 0, us = 0; rest.forEach(function (g) { gs += g.growth; us += g.uses; });
-      rows.push({ name: 'その他 ' + rest.length + ' 種', growth: gs, share: A.growTotal ? gs / A.growTotal : 0, uses: us, avg: us ? gs / us : 0, dim: true });
-    }
-    var max = rows.reduce(function (m, r) { return Math.max(m, r.growth); }, 1);
-    var box = $('#tools'); box.textContent = '';
-    if (!rows.length) { box.appendChild(h('p', 'cap', '会話が長くなった箇所がありません。')); return; }
-    rows.forEach(function (r) {
-      var row = h('div', 'trow' + (r.dim ? ' dim' : '')); row.setAttribute('role', 'listitem'); row.tabIndex = 0;
-      var lab = h('div', 'tlabel'); var nm = h('span', 'ttl' + (r.dim ? '' : ' mono'), r.dim ? r.name : L.toolJa(r.name)); lab.appendChild(nm);
-      var bw = h('div', 'tbarwrap'); var stack = h('div', 'stack'); stack.style.width = (r.growth / max * 100) + '%';
-      var seg = h('i', 's1'); seg.style.flexGrow = '1'; stack.appendChild(seg); bw.appendChild(stack);
-      var val = h('div', 'tval', cp(r.growth) + ' · ' + pct(r.share)); val.appendChild(h('small', '', '平均 +' + cp(r.avg) + '/回'));
-      row.appendChild(lab); row.appendChild(bw); row.appendChild(val);
-      var build = function (el) {
-        el.appendChild(tTitle(r.name));
-        el.appendChild(tRow('var(--s1)', '会話が長くなった分', fl(r.growth)));
-        el.appendChild(tRow(null, '全体に占める割合', pct(r.share)));
-        el.appendChild(tRow(null, '回数', fl(r.uses) + ' 回'));
-        el.appendChild(tRow(null, '1 回あたり平均', '+' + fl(r.avg)));
-      };
-      row.addEventListener('pointermove', function (e) { showTip(build, e.clientX, e.clientY); });
-      row.addEventListener('pointerleave', hideTip);
-      row.addEventListener('focus', function () { var b = row.getBoundingClientRect(); showTip(build, b.left + b.width / 2, b.bottom - 8); });
-      row.addEventListener('blur', hideTip);
-      box.appendChild(row);
-    });
-  }
-
   /* ----- table twins ----- */
   function fillTable(tbl, head, rows, numCols, wrapCols) {
     tbl.textContent = '';
@@ -2330,13 +2976,10 @@ tr:last-child td { border-bottom: 0; }
       A.main.map(function (m) {
         return ['#' + m.idx, '#' + m.task].concat(A.timed ? [clock(m.ts, true)] : []).concat([fl(m.ctx), pct(m.ctx / A.win), m.delta === null ? '' : (m.delta >= 0 ? '+' : '') + fl(m.delta), m.tools.join('、'), m.comp ? '要約の直後' : (m.brk ? (m.brk.kind === 'idle' ? '離れていて使い回しが切れた' : '会話の先頭が変わった(推定)') : '')]);
       }), [base, base + 1, base + 2], [base + 3]);
-    fillTable($('#toolTable'),
-      ['ツール', '会話が長くなった分', '割合', '回数', '1 回あたり平均'],
-      A.tools.map(function (g) { return [g.name, fl(g.growth), pct(g.share), fl(g.uses), '+' + fl(g.avg)]; }), [1, 2, 3, 4], []);
   }
 
   window.addEventListener('scroll', hideTip, { passive: true });
-  load(L.makeSample().text, SAMPLE);
+  loadSample();
 })();
 </script>
 
